@@ -38,7 +38,8 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
 
     if (heros.depenserEnergie(cost)) {
 
-      cible.recevoirDegats(stats);
+      int realDamage = heros.calculateDamageOutput(stats);
+      cible.recevoirDegats(realDamage);
       System.out.println(heros + " attaque avec " + name + " (" + stats + " dégâts) !");
       return true;
     }

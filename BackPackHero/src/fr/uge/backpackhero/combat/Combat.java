@@ -19,6 +19,7 @@ public final class Combat {
   private boolean isHeroTurn;
   private final CombatInteractionDelegate delegate;
 
+
   public Combat(Heros heros, List<Ennemi> listEnemies, CombatInteractionDelegate delegate) {
     Objects.requireNonNull(heros);
     Objects.requireNonNull(listEnemies);
@@ -31,10 +32,12 @@ public final class Combat {
     this.heros = heros;
     this.enemies = new ArrayList<>(listEnemies); 
     this.delegate = delegate;
-    
+
     // Le combat commence par le tour du héros
     startHeroTurn();
   }
+  
+
 
   /**
    * Prépare et démarre le tour du héros.
@@ -42,6 +45,16 @@ public final class Combat {
    */
   public void startHeroTurn() {
     this.isHeroTurn = true;
+    
+    // 1. Effets de début de tour (Regen, Burn)
+    heros.triggerStartTurnEffects();
+    if (!heros.estVivant()) return;
+
+    // 2. Fin des effets du tour précédent pour les ennemis (Poison, Dégradation)
+    // C'est logique : le tour de l'ennemi vient de finir techniquement.
+    for (Ennemi e : enemies) {
+        if (e.estVivant()) e.triggerEndTurnEffects();
+    }
     heros.debuterTourCombat();
     
     // Les ennemis choisissent leur action pour le tour à venir
@@ -76,6 +89,7 @@ public final class Combat {
 
     // Si l'action a réussi et a tué un ennemi, on le retire de la liste
     if (success && target != null && !target.estVivant()) {
+      heros.gainXp(target.getxpReward());
       enemies.remove(target);
     }
     
@@ -88,32 +102,26 @@ public final class Combat {
   public void startEnemyTurn() {
     if (!isHeroTurn) return;
     this.isHeroTurn = false;
-    // Chaque ennemi exécute l'action qu'il avait annoncée
+    heros.triggerEndTurnEffects(); 
+    if (!heros.estVivant()) return;
     for (Ennemi enemy : enemies) {
       if (enemy.estVivant()) {
-    	  EnemyAction action = enemy.chooseAction();
-    	  if (action instanceof CurseAction curseAct) {
-              // Si c'est une Malédiction, on appelle le délégué (la View) pour gérer l'interaction.
-              // Cette méthode va bloquer l'exécution jusqu'à ce que l'utilisateur choisisse.
+        EnemyAction action = enemy.getActionAnnoncee();
+        if (action instanceof CurseAction curseAct) {
               delegate.handleForcedCurse(heros, curseAct.curse()); 
-              
-              // Une fois l'interaction terminée, le Héros a subi les dégâts/a placé l'item.
-              // On ne demande plus à RatLoupBehavior d'exécuter l'action !
+              enemy.clearActionAnnoncee();
           } else {
-              // Si ce n'est pas une Malédiction, exécution normale de l'action
-              enemy.executerAction(action, heros); 
+              enemy.executerAction(heros); 
           }
+        enemy.triggerStartTurnEffects();
       }
     }
-    // Vérification de défaite immédiate
     if (!heros.estVivant()) return; 
-    // Nettoyage des ennemis morts
     enemies.removeIf(e -> !e.estVivant());
-    // Si le combat n'est pas fini, on redonne la main au héros
     if (!enemies.isEmpty()) {
       startHeroTurn();
     } else {
-    	endCombat();
+      endCombat();
     }
   }
   
@@ -122,14 +130,11 @@ public final class Combat {
    * Inclut la décrémentation des pénalités temporaires.
    */
   public void endCombat() {
-      // 1. Décrémentation de la pénalité de Malédiction
-      heros.decrementCursePenaltyDuration();
-      // 2. Logique de récompenses (Exemple: gain d'XP pour chaque ennemi vaincu)
-      if (getState() == CombatState.WIN) {
-          heros.gainXp(10);
-      }
+    heros.decrementCursePenaltyDuration();
+    if (getState() == CombatState.WIN) {
+      heros.gainXp(10);
+    }
       
-      // 3. Autres nettoyages...
   }
   
   /**
@@ -143,9 +148,17 @@ public final class Combat {
   }
   
   
-  public Heros getHero() { return heros; }
+  public Heros getHero() { 
+    return heros; 
+  }
   
-  public List<Ennemi> getAliveEnemies() { return List.copyOf(enemies); }
+  public List<Ennemi> getAliveEnemies() { 
+    return List.copyOf(enemies); 
+  }
   
-  public boolean isHeroTurn() { return isHeroTurn; }
+  public boolean isHeroTurn() { 
+    return isHeroTurn; 
+  }
+  
+  
 }

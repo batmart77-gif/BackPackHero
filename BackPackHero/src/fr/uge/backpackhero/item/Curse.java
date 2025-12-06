@@ -24,7 +24,7 @@ public record Curse(List<Position> pos) implements Item {
 
 	@Override
 	public String details() {
-		return "Nothing special about a curse...";
+		return "Nothing special about a curse... But you will know despair";
 	}
 
 	@Override
@@ -38,13 +38,9 @@ public record Curse(List<Position> pos) implements Item {
 	}
 	
 	@Override
-    public boolean rotatable() {
-        return false;
-    }
-	
-	@Override
 	public String toString() {
-		return "C";
+	  return "C";
 	}
+	  
 
 }

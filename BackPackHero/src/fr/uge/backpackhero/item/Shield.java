@@ -38,7 +38,8 @@ public record Shield(String name, List<Position> pos, Rarity rarity, int stats, 
       
     // Un bouclier n'a pas besoin de cible ennemie
     if (heros.depenserEnergie(cost)) {
-      heros.ajouterProtection(stats);
+      int realBlock = heros.calculateBlockOutput(stats);
+      heros.ajouterProtection(realBlock);
       System.out.println(heros + " utilise " + name + " (+ " + stats + " protection).");
       return true;
     }

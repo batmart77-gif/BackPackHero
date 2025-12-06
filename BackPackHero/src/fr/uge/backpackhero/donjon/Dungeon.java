@@ -31,17 +31,25 @@ public class Dungeon {
    * @return true si le changement a réussi, false si c'était le dernier étage.
    */
   public boolean moveToNextFloor() {
-      if (currentFloorIndex < floors.size() - 1) {
-          currentFloorIndex++;
-          return true;
-      }
-      return false; 
+    if (currentFloorIndex < floors.size() - 1) {
+      currentFloorIndex++;
+      return true;
+    }
+    return false; 
   }
   
   /**
    * Vérifie si le joueur a fini le donjon (franchi la sortie du dernier étage).
    */
   public boolean isFinished() {
-      return currentFloorIndex == floors.size() - 1;
+    return currentFloorIndex == floors.size() - 1;
+  }
+  
+  /**
+   * Renvoie le numéro de l'étage actuel (1, 2 ou 3).
+   */
+  public int getFloorNumber() {
+    // currentFloorIndex commence à 0, donc on ajoute 1 pour l'affichage
+    return currentFloorIndex + 1;
   }
 }

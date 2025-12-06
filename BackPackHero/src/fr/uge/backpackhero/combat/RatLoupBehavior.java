@@ -55,7 +55,7 @@ public final class RatLoupBehavior implements EnemyBehavior {
       case ProtectAction protect ->
         enemy.gagnerProtection(protect.amount());
       case CurseAction curseAct ->
-        heros.receiveCurse(curseAct.curse());
+      throw new IllegalStateException("CurseAction must be handled by Combat/Delegate, not by EnemyBehavior");
     }
   }
 }

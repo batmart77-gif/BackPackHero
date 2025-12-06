@@ -15,19 +15,21 @@ import fr.uge.backpackhero.donjon.ExitRoom;
 import fr.uge.backpackhero.combat.Combat;
 import fr.uge.backpackhero.combat.CombatState;
 import fr.uge.backpackhero.item.ItemInstance;
+import fr.uge.backpackhero.item.View;
 
 public final class Jeu {
   private final Heros heros;
   private final Dungeon donjon;
-  // Variables qui changent tout le temps
+  private final View view; 
   private Mode modeActuel;
   private Combat combatEnCours; // Rempli uniquement si Mode.COMBAT
   private int posX; // Position Colonne
   private int posY; // Position Ligne
   
-  public Jeu(Heros heros, Dungeon donjon) {
+  public Jeu(Heros heros, Dungeon donjon, View view) {
     this.heros = Objects.requireNonNull(heros);
     this.donjon = Objects.requireNonNull(donjon);
+    this.view = Objects.requireNonNull(view);
     this.modeActuel = Mode.EXPLORATION;
     this.posX = 0;
     this.posY = 0;
@@ -60,40 +62,46 @@ public final class Jeu {
    * Regarde le type de salle et agit en conséquence.
    */
   private void analyserSalle(Room room) {
-    // Utilisation du pattern matching (Java 17+)
     switch (room) {
-      case Corridor c -> 
-        System.out.println("Un couloir");
-      case EnemyRoom e -> {
-        // Vérifier s'il reste au moins un ennemi vivant
-        boolean ennemisVivants = false;
-        for (var ennemi : e.enemies()) {
-            if (ennemi.estVivant()) {
-                ennemisVivants = true;
-                break;
-            }
-        }
-        if (ennemisVivants) {
-            System.out.println("ATTENTION ! Des ennemis vous barrent la route !");
-            this.modeActuel = Mode.COMBAT;
-            this.combatEnCours = new Combat(heros, e.enemies());
-        } else {
-            System.out.println("Des cadavres de rats gisent sur le sol. Vous passez.");
-        }
-      }
-      case TreasureRoom t -> {
-        System.out.println("Un coffre au trésor !");
-        for (ItemInstance item : t.loot()) {
-          System.out.println("   - Vous voyez : " + item.getName());
-        }
-      }
+      case Corridor c -> System.out.println("Un couloir");
+      case EnemyRoom e -> handleEnemyRoom(e);
+      case TreasureRoom t -> handleTreasureRoom(t);
       case MerchantRoom m -> System.out.println("Un marchand vous observe");    
       case HealerRoom h -> System.out.println("Un autel de soin");
-      case ExitRoom x -> {
-        System.out.println("Vous activez la porte...");
-        tenterSortie();
+      case ExitRoom x -> handleExitRoom();
+    }
+  }
+
+  private void handleEnemyRoom(EnemyRoom e) {
+    // 1. Vérification des vivants
+    boolean ennemisVivants = false;
+    for (var ennemi : e.enemies()) {
+      if (ennemi.estVivant()) {
+        ennemisVivants = true;
+        break;
       }
     }
+    // 2. Action
+    if (ennemisVivants) {
+      System.out.println("ATTENTION ! Des ennemis vous barrent la route !");
+      this.modeActuel = Mode.COMBAT;
+      this.combatEnCours = new Combat(heros, e.enemies(), view);
+    } else {
+      System.out.println("Des cadavres de rats gisent sur le sol. Vous passez.");
+    }
+  }
+
+  private void handleTreasureRoom(TreasureRoom t) {
+    System.out.println("Un coffre au trésor !");
+    for (ItemInstance item : t.loot()) {
+      System.out.println("   - Vous voyez : " + item.getName());
+    }
+  }
+  
+
+  private void handleExitRoom() {
+    System.out.println("Vous activez la porte...");
+    tenterSortie();
   }
 
   /**
@@ -103,8 +111,9 @@ public final class Jeu {
     boolean succes = donjon.moveToNextFloor();
     if (succes) {
       System.out.println("Vous descendez les escaliers vers l'étage suivant !");
-      this.posX = 0;
-      this.posY = 0;
+      Floor newFloor = donjon.getCurrentFloor();
+      this.posX = newFloor.startX();
+      this.posY = newFloor.startY();
     } else {
       System.out.println("VICTOIRE ! Vous sortez du donjon à l'air libre !");
       this.modeActuel = Mode.GAGNE;

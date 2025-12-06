@@ -23,9 +23,9 @@ public class ItemInstance {
      * Met à jour l'angle de rotation de l'item
      */
     public void rotate() {
-    	if (!baseItem.rotatable()) {
-    		throw new IllegalStateException("You can't rotate a curse !");
-    	}
+      if (!baseItem.rotatable()) {
+        throw new IllegalStateException("You can't rotate a curse !");
+      }
         this.rotationAngle = (this.rotationAngle + 90) % 360;
     }
 
@@ -65,7 +65,7 @@ public class ItemInstance {
      * @return une liste contenant les nouvelles positions de l'item
      */
     private List<Position> calculateRotatedShape(List<Position> originalShape, int angle) {
-    	Objects.requireNonNull(originalShape);
+      Objects.requireNonNull(originalShape);
         var currentShape = originalShape;
         var rotationCount = angle / 90;
         for (int i = 0; i < rotationCount; i++) {
@@ -80,7 +80,7 @@ public class ItemInstance {
      * @return une liste contenant les nouvelles positions de l'item
      */
     private List<Position> rotateShape90(List<Position> shape) {
-    	Objects.requireNonNull(shape);
+      Objects.requireNonNull(shape);
         var list = new ArrayList<Position>();
         for (var elmt : shape) {
             var newR = elmt.column();
@@ -88,13 +88,13 @@ public class ItemInstance {
             list.add(new Position(newR, newC));
         }
         var minR = list.stream()
-        		.mapToInt(Position::row)
-        		.min()
-        		.orElse(0);
+            .mapToInt(Position::row)
+            .min()
+            .orElse(0);
         var minC = list.stream()
-        		.mapToInt(Position::column)
-        		.min()
-        		.orElse(0);
+            .mapToInt(Position::column)
+            .min()
+            .orElse(0);
         var normalized = new ArrayList<Position>();
         for (var elmt : list) {
             normalized.add(new Position(elmt.row() - minR, elmt.column() - minC));

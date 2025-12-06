@@ -27,7 +27,6 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
 	public String toString() {
 		return switch(name) {
 		case "Composite Bow" -> "CB";
-		case "Mouse Bow" -> "MB";
 		default -> throw new IllegalArgumentException("Je connais pas ca c'est quoi ? ");
 		};
 	}

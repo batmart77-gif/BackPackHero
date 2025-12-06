@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
+import fr.uge.backpackhero.combat.CombatInteractionDelegate;
 import fr.uge.backpackhero.entites.Heros;
 
 
@@ -11,10 +12,11 @@ import fr.uge.backpackhero.entites.Heros;
 /**
  * Classe d'interaction en mode console pour la classe {@code BackPack}.
  */
-public class View {
+public class View implements CombatInteractionDelegate {
 	private final BackPack backPack;
 	private final StuffFactory factory;
 	private final Heros heros;
+	private final Scanner scanner = new Scanner(System.in);
 
 	public View(BackPack backPack, StuffFactory factory, Heros heros) {
 		Objects.requireNonNull(backPack);
@@ -32,7 +34,6 @@ public class View {
      * @param numItemsToRoll Le nombre d'items aléatoires à générer avant la malédiction.
      */
     public void testCurseScenario(int numItemsToRoll) {
-        var scanner = new Scanner(System.in);
         System.out.println("\n#################################################");
         System.out.println("          DEMO SCÉNARIO : PLACEZ VOS ITEMS");
         System.out.println("#################################################");
@@ -47,14 +48,14 @@ public class View {
             System.out.println("Vous trouvez un nouvel Item: **" + currentInstance.getName() + "** (" + currentInstance.getCurrentShape().size() + " slots)");
             
             // Gère les commandes (rotation, suppression, etc.)
-            if (!handleCommands(backPack, currentInstance, scanner)) {
+            if (!handleCommands(backPack, currentInstance, this.scanner)) {
                 System.out.println("Quittez l'interaction.");
-                scanner.close();
+                this.scanner.close();
                 return;
             }
             
             // Tente le placement
-            if (handlePlacement(backPack, currentInstance, scanner)) {
+            if (handlePlacement(backPack, currentInstance, this.scanner)) {
                 // Item placé, continue la boucle
             } else {
                 System.out.println("\nImpossible de placer l'item, il est perdu. Passons au suivant.");
@@ -80,7 +81,7 @@ public class View {
         var placed = false;
         while (!placed) {
             System.out.println("\nVous devez placer la Malédiction pour continuer...");
-            if (handlePlacement(backPack, curseInstance, scanner)) {
+            if (handlePlacement(backPack, curseInstance, this.scanner)) {
                 placed = true;
                 System.out.println("\nLa Malédiction est placée. La partie continue...");
             } else {
@@ -90,8 +91,13 @@ public class View {
         }
         
         printBackPack(backPack);
-        scanner.close();
+        this.scanner.close();
         System.out.println("Scénario de test terminé.");
+    }
+    
+    @Override
+    public void handleForcedCurse(Heros heros, Curse curse) {
+            handleForcedCurse(heros, curse, this.scanner);
     }
     
     /**
@@ -109,27 +115,22 @@ public class View {
         System.out.print("> ");
         String choix = scanner.nextLine().trim().toUpperCase();
         if (choix.equals("A")) {
-            // Le Héros accepte la Malédiction dans son sac
             heros.acceptCurseImmediate();
             var instance = new ItemInstance(curse);
-            // Tentative de placement forcé, doit demander les coordonnées
             printBackPack(heros.getBackpack());
             System.out.println("\nVous devez immédiatement placer la Malédiction : " + instance.getName());
             var placed = false;
             while(!placed) {
-                 // 🚨 Réutiliser readPlacementCoordinates pour obtenir la position de l'utilisateur
                  Position startPos = readPlacementCoordinates(scanner);
                  if (ItemPlacement(heros.getBackpack(), instance, startPos)) {
                      placed = true;
                      System.out.println("Malédiction placée. Vous continuez le combat.");
                  } else {
-                     System.err.println("❌ Placement impossible. Réessayez.");
+                     System.err.println("Placement impossible. Réessayez.");
                  }
             }
         } else {
-            // Le Héros refuse, subit la pénalité de dégâts
             heros.refuseCurseImmediate();
-            // La Malédiction est évitée
         }
     }
 	
@@ -138,7 +139,7 @@ public class View {
 	 * @param backpack le sac à dos à afficher
 	 * @throws NullPointerException si l'argument est {@code null}
 	 */
-    public void printBackPack(BackPack backpack) {
+    public static void printBackPack(BackPack backpack) {
     	Objects.requireNonNull(backpack);
         var rows = 3;
         var cols = 5;
@@ -169,7 +170,6 @@ public class View {
     public void editBackPack(BackPack backpack, StuffFactory factory) {
     	Objects.requireNonNull(backpack);
     	Objects.requireNonNull(factory);
-        var scanner = new Scanner(System.in);
         System.out.println("\n#################################################");
         System.out.println("                   BACKPACK");
         System.out.println("#################################################");
@@ -179,13 +179,13 @@ public class View {
             printBackPack(backpack);
             System.out.println("\nYou found a new Item: **" + currentInstance.getName() + "** (" + currentInstance.getCurrentShape().size() + " slots)");
             System.out.println("Item Shape (relative positions): " + currentInstance.getCurrentShape());
-            if (!handleCommands(backpack, currentInstance, scanner)) {
+            if (!handleCommands(backpack, currentInstance, this.scanner)) {
                 break;
             }
-            if (handlePlacement(backpack, currentInstance, scanner)) {
+            if (handlePlacement(backpack, currentInstance, this.scanner)) {
             }
         }
-        scanner.close();
+        this.scanner.close();
         System.out.println("Interactive mode finished.");
     }
 
@@ -287,7 +287,7 @@ public class View {
 
         if (curseChoice.equals("R")) {
             if (this.backPack.removeItem(itemToRemove)) {
-                this.heros.applyCurseRemovalPenalty(); // 👈 Application de la pénalité HP Max
+                this.heros.applyCurseRemovalPenalty(); //Application de la pénalité HP Max
                 System.out.println("Malédiction retirée. Pénalité de HP Max appliquée pour 2 combats.");
             } else {
                 System.err.println("Erreur interne lors du retrait de la malédiction.");
@@ -304,23 +304,15 @@ public class View {
      * @param scanner L'objet Scanner pour l'interaction.
      */
     public void processItemRemoval(Scanner scanner) {
-        
-        // Étape 1 : Lire les coordonnées
         Position targetPos = readItemRemovalCoordinates(scanner);
         if (targetPos == null) {
-            return; // Annuler si la lecture a échoué
+            return;
         }
-
         var itemToRemove = this.backPack.getItemAt(targetPos).orElse(null);
-
         if (itemToRemove != null) {
-            
-            // Étape 2 : Appliquer la logique spécifique ou le retrait normal
             if (itemToRemove.getItem() instanceof Curse) {
-                // Logique spécifique de la malédiction (appel à la méthode dédiée)
                 handleCurseRemovalChoice(itemToRemove, scanner);
             } else {
-                // Logique de retrait d'un item normal
                 if (this.backPack.removeItem(itemToRemove)) {
                     System.out.println("Item " + itemToRemove.getName() + " retiré avec succès.");
                 } else {
@@ -364,61 +356,5 @@ public class View {
                  System.err.println("Invalid command.");
             }
         }
-    }
-    
-    /**
-     * Gère la commande de l'utilisateur pour retirer un item du sac à dos.
-     * L'utilisateur doit saisir les coordonnées de l'item à retirer.
-     * @param backpack Le sac à dos cible.
-     * @param scanner L'objet Scanner pour la lecture des coordonnées.
-     * @throws NullPointerException si les arguments sont {@code null}
-     */
-    private void handleRemoveItem(BackPack backpack, Scanner scanner) {
-    	Objects.requireNonNull(backpack);
-    	Objects.requireNonNull(scanner);
-        System.out.print("Enter the ROW and COLUMN of the Item to remove (e.g., 1 3): ");
-        try {
-            String[] parts = scanner.nextLine().trim().split("\\s+");
-            if (parts.length < 2) {
-                 System.err.println("Error: Invalid coordinate format.");
-                 return;
-            }
-            var r = Integer.parseInt(parts[0]);
-            var c = Integer.parseInt(parts[1]);
-            Position targetPos = new Position(r, c);
-            var itemToRemove = backpack.getItemAt(targetPos).orElse(null);
-            if (itemToRemove != null) {
-                if (backpack.removeItem(itemToRemove)) {
-                    System.out.println("Item " + itemToRemove.getName() + " successfully removed.");
-                } else {
-                    System.err.println("Internal removal error."); 
-                }
-            } else {
-                System.err.println("No item found at position " + targetPos + ".");
-            }
-
-        } catch (NumberFormatException e) {
-            System.err.println("Error: Row or column input must be numeric.");
-        }
-    }
-    
-    private boolean handleCurseChoice(BackPack backpack, ItemInstance curseInstance, Scanner scanner, Heros heros) {
-        System.out.println("\n CHOIX DE MALÉDICTION : Voulez-vous retirer la Malédiction maintenant ?");
-        System.out.print("Saisir (r) pour la Retirer et subir une pénalité, ou appuyez sur Entrée pour la Garder : ");
-
-        String command = scanner.nextLine().trim();
-        if (command.equalsIgnoreCase("r")) {
-            if (backpack.removeItem(curseInstance)) {
-                // 1. Appliquer la pénalité au Héros
-                heros.applyCurseRemovalPenalty(); // Nécessite que heros soit passé ici
-                System.out.println("Malédiction retirée. Pénalité appliquée au Héros.");
-                return true; // Malédiction retirée
-            } else {
-                System.err.println("Erreur interne : Impossible de retirer la malédiction du sac.");
-                return false;
-            }
-        }
-        System.out.println("Malédiction gardée. Elle continue d'occuper de l'espace.");
-        return false; // Malédiction gardée
     }
 }
