@@ -24,6 +24,7 @@ public class Main {
     System.out.println("     BACKPACK HERO  ️");
     System.out.println("========================================");
     System.out.println("TEEEEEEEEST");
+    System.out.println("TEEEEEEEEST2");
     Heros heros = new Heros();
     System.out.println(">> Préparation de votre équipement...");
     StuffFactory factory = new StuffFactory();
