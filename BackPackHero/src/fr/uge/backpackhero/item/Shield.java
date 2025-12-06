@@ -6,9 +6,25 @@ import java.util.Objects;
 import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.entites.Heros;
 
-
+/**
+ * Represents a defensive item that provides protection during combat.
+ * Shields add a block value to the Hero's defense at a certain energy cost.
+ *
+ * @param name The name of the shield.
+ * @param pos The list of relative positions describing the shape of the item in the backpack.
+ * @param rarity The rarity level of the shield.
+ * @param stats The base protection value the shield adds on use.
+ * @param cost The energy cost required to use the shield in combat.
+ * @param price The buying and selling price of the shield.
+ */
 public record Shield(String name, List<Position> pos, Rarity rarity, int stats, int cost, int price) implements Item {
 	
+	/**
+     * Compact constructor with validation.
+     *
+     * @throws NullPointerException if name, rarity, or pos is null.
+     * @throws IllegalStateException if cost, stats, or price is negative.
+     */
 	public Shield {
 		Objects.requireNonNull(name);
 		Objects.requireNonNull(rarity);
@@ -19,10 +35,21 @@ public record Shield(String name, List<Position> pos, Rarity rarity, int stats, 
 		}
 	}
 	
+	/**
+     * Returns a human-readable description of the shield.
+     *
+     * @return A string describing the shield and its protective effect.
+     */
 	public String details() {
 		return "Shield " + name + ", " + rarity.toString() + ", adds " + stats + " protection on use, needs " + cost + " to be used, can be sold or bought to a merchant for " + price;
 	}
 	
+	/**
+     * Returns a compact identifier for display purposes.
+     *
+     * @return A short code representing this shield.
+     * @throws IllegalArgumentException if no short form is defined for this shield name.
+     */
 	@Override
 	public String toString() {
 		return switch(name) {
@@ -31,16 +58,23 @@ public record Shield(String name, List<Position> pos, Rarity rarity, int stats, 
 		};
 	}
 	
-	
+	/**
+     * Attempts to use the shield in combat, consuming energy and adding protection to the hero.
+     * Note: A shield does not require an enemy target.
+     *
+     * @param heros The hero using the item.
+     * @param target The enemy target (ignored for shields, can be {@code null}).
+     * @return {@code true} if the shield was successfully used, {@code false} otherwise (e.g., not enough energy).
+     */
 	@Override
-  public boolean utiliser(Heros heros, Ennemi cible) {
+  public boolean use(Heros heros, Ennemi traget) {
     Objects.requireNonNull(heros);
       
     // Un bouclier n'a pas besoin de cible ennemie
     if (heros.depenserEnergie(cost)) {
       int realBlock = heros.calculateBlockOutput(stats);
       heros.ajouterProtection(realBlock);
-      System.out.println(heros + " utilise " + name + " (+ " + stats + " protection).");
+      System.out.println(heros + " uses " + name + " (+ " + stats + " protection).");
       return true;
     }
     return false;

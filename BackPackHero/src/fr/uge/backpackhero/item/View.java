@@ -10,7 +10,8 @@ import fr.uge.backpackhero.entites.Heros;
 
 
 /**
- * Classe d'interaction en mode console pour la classe {@code BackPack}.
+ * Console-based interaction class responsible for handling all user input 
+ * and displaying the state of the {@code BackPack} and combat choices.
  */
 public class View implements CombatInteractionDelegate {
 	private final BackPack backPack;
@@ -18,6 +19,14 @@ public class View implements CombatInteractionDelegate {
 	private final Heros heros;
 	private final Scanner scanner = new Scanner(System.in);
 
+	/**
+     * Initializes the View with references to the core game objects.
+     *
+     * @param backPack The hero's backpack instance.
+     * @param factory The item factory for generating new items.
+     * @param heros The hero entity.
+     * @throws NullPointerException if any argument is {@code null}.
+     */
 	public View(BackPack backPack, StuffFactory factory, Heros heros) {
 		Objects.requireNonNull(backPack);
 		Objects.requireNonNull(factory);
@@ -28,10 +37,11 @@ public class View implements CombatInteractionDelegate {
 	}
 	
 	/**
-     * Nouvelle méthode pour exécuter un scénario de test:
-     * 1. Place un certain nombre d'items aléatoires.
-     * 2. Force le placement d'une Malédiction (Curse).
-     * @param numItemsToRoll Le nombre d'items aléatoires à générer avant la malédiction.
+     * Executes a demo scenario for item placement and forced curse handling.
+     * 1. Places a specified number of random items interactively.
+     * 2. Forces the placement of a Curse item.
+     *
+     * @param numItemsToRoll The number of random items to generate before the curse.
      */
     public void testCurseScenario(int numItemsToRoll) {
         System.out.println("\n#################################################");
@@ -44,12 +54,13 @@ public class View implements CombatInteractionDelegate {
             var currentInstance = new ItemInstance(baseItem);
             
             printBackPack(backPack);
-            System.out.println("\n--- Tour " + (i + 1) + "/" + numItemsToRoll + " ---");
-            System.out.println("Vous trouvez un nouvel Item: **" + currentInstance.getName() + "** (" + currentInstance.getCurrentShape().size() + " slots)");
+            System.out.println("\n--- Turn " + (i + 1) + "/" + numItemsToRoll + " ---");
+            System.out.println("You find a new Item: **" + currentInstance.getName() + "** (" + currentInstance.getCurrentShape().size() + " slots)");
+            System.out.println("Shape : " + currentInstance.getCurrentShape());
             
             // Gère les commandes (rotation, suppression, etc.)
             if (!handleCommands(backPack, currentInstance, this.scanner)) {
-                System.out.println("Quittez l'interaction.");
+                System.out.println("Quitting interaction.");
                 this.scanner.close();
                 return;
             }
@@ -58,7 +69,7 @@ public class View implements CombatInteractionDelegate {
             if (handlePlacement(backPack, currentInstance, this.scanner)) {
                 // Item placé, continue la boucle
             } else {
-                System.out.println("\nImpossible de placer l'item, il est perdu. Passons au suivant.");
+                System.out.println("\nCannot place the item, it is lost. Moving to the next turn.");
             }
         }
 
@@ -91,6 +102,24 @@ public class View implements CombatInteractionDelegate {
         }
         
         printBackPack(backPack);
+        var newItem = factory.randomItem();
+        var newCurrentInstance = new ItemInstance(newItem);
+        System.out.println("Vous trouvez un nouvel Item: **" + newCurrentInstance.getName() + "** (" + newCurrentInstance.getCurrentShape().size() + " slots)");
+        
+        // Gère les commandes (rotation, suppression, etc.)
+        if (!handleCommands(backPack, newCurrentInstance, this.scanner)) {
+            System.out.println("Quittez l'interaction.");
+            this.scanner.close();
+            return;
+        }
+        
+        // Tente le placement
+        if (handlePlacement(backPack, newCurrentInstance, this.scanner)) {
+            // Item placé, continue la boucle
+        } else {
+            System.out.println("\nImpossible de placer l'item, il est perdu. Passons au suivant.");
+        }
+        printBackPack(backPack);
         this.scanner.close();
         System.out.println("Scénario de test terminé.");
     }
@@ -101,43 +130,46 @@ public class View implements CombatInteractionDelegate {
     }
     
     /**
-     * Gère l'interaction lorsque le Héros reçoit une Malédiction forcée (ex: par un ennemi).
-     * @param heros Le Héros cible.
-     * @param curse La Malédiction à gérer.
-     * @param scanner L'objet Scanner existant.
+     * Implementation of the {@code CombatInteractionDelegate} interface.
+     * Handles the forced {@code Curse} interaction initiated by an enemy during combat.
+     *
+     * @param heros The Hero targeted by the curse.
+     * @param curse The Curse object to be handled.
+     * @throws NullPointerException if heros or curse is {@code null}.
      */
     public void handleForcedCurse(Heros heros, Curse curse, Scanner scanner) {
         Objects.requireNonNull(heros);
         Objects.requireNonNull(curse);
         Objects.requireNonNull(scanner);
-        System.out.println("L'ennemi vous lance une Malédiction !");
-        System.out.println("Choix : (A)ccepter la Malédiction et la placer dans le sac ou (R)efuser et subir des dégâts ?");
+        System.out.println("The enemy casts a Curse on you !");
+        System.out.println("Choice: (A)ccept the Curse and place it in the backpack or (R)efuse and suffer damage ?");
         System.out.print("> ");
         String choix = scanner.nextLine().trim().toUpperCase();
         if (choix.equals("A")) {
             heros.acceptCurseImmediate();
             var instance = new ItemInstance(curse);
             printBackPack(heros.getBackpack());
-            System.out.println("\nVous devez immédiatement placer la Malédiction : " + instance.getName());
+            System.out.println("\nYou must immediately place the Curse : " + instance.getName());
             var placed = false;
             while(!placed) {
                  Position startPos = readPlacementCoordinates(scanner);
                  if (ItemPlacement(heros.getBackpack(), instance, startPos)) {
                      placed = true;
-                     System.out.println("Malédiction placée. Vous continuez le combat.");
+                     System.out.println("Curse placed. You continue the fight.");
                  } else {
-                     System.err.println("Placement impossible. Réessayez.");
+                     System.err.println("Placement impossible. Please retry.");
                  }
             }
         } else {
             heros.refuseCurseImmediate();
+            System.out.println("Curse refused. Damage penalty applied.");
         }
     }
 	
-	/**
-	 * Affiche l'état actuel du sac à dos
-	 * @param backpack le sac à dos à afficher
-	 * @throws NullPointerException si l'argument est {@code null}
+    /**
+	 * Displays the current state of the backpack in a grid format to the console.
+	 * * @param backpack The backpack to display.
+	 * @throws NullPointerException if the argument is {@code null}.
 	 */
     public static void printBackPack(BackPack backpack) {
     	Objects.requireNonNull(backpack);
@@ -162,10 +194,11 @@ public class View implements CombatInteractionDelegate {
     }
     
     /**
-     * Modifie le sac à dos en placant un nouvel item
-     * @param backpack
-     * @param factory
-     * @throws NullPointerException si les arguments sont {@code null}
+     * Enters an interactive loop mode allowing the user to find and place items indefinitely.
+     *
+     * @param backpack The backpack to modify.
+     * @param factory The factory to create random items.
+     * @throws NullPointerException if arguments are {@code null}.
      */
     public void editBackPack(BackPack backpack, StuffFactory factory) {
     	Objects.requireNonNull(backpack);
@@ -190,39 +223,44 @@ public class View implements CombatInteractionDelegate {
     }
 
     /**
-     * Lit et valide la saisie des coordonnées de placement par l'utilisateur
-     * @param scanner
-     * @return La Position saisie ou null en cas d'erreur irrécupérable
-     * @throws NullPointerException si l'argument est {@code null}
+     * Reads and validates the user's input for the placement coordinates (top-left corner).
+     *
+     * @param scanner The Scanner object for reading input.
+     * @return The validated {@code Position}.
+     * @throws NullPointerException if the argument is {@code null}.
      */
     private Position readPlacementCoordinates(Scanner scanner) {
-    	Objects.requireNonNull(scanner);
-        var row = -1;
-        var col = -1;
-        var validCoords = false;
-        while (!validCoords) {
+        Objects.requireNonNull(scanner);
+
+        while (true) {
             try {
-                System.out.print("Enter the ROW (0 to 2) to place the top-left corner: ");
-                var rowInput = scanner.nextLine().strip();
-                row = Integer.parseInt(rowInput);
-                System.out.print("Enter the COLUMN (0 to 4) to place the top-left corner: ");
-                var colInput = scanner.nextLine().strip();
-                col = Integer.parseInt(colInput);
-                validCoords = true;
+                System.out.print("Enter the ROW (0 to 2): ");
+                int row = Integer.parseInt(scanner.nextLine().trim());
+
+                System.out.print("Enter the COLUMN (0 to 4): ");
+                int col = Integer.parseInt(scanner.nextLine().trim());
+
+                if (row < 0 || row >= 3 || col < 0 || col >= 5) {
+                    System.err.println("Coordinates out of bounds. Backpack is 3 rows (0–2) and 5 cols (0–4).");
+                    continue;
+                }
+
+                return new Position(row, col);
+
             } catch (NumberFormatException e) {
-                System.err.println("Input Error: Please enter valid numbers (0-2 for row, 0-4 for column).");
+                System.err.println("Invalid input. Please enter numbers.");
             }
         }
-        return new Position(row, col);
     }
 
     /**
-     * Tente d'ajouter l'Item au sac à dos et affiche le résultat
-     * @param backpack
-     * @param newItem
-     * @param startPos
-     * @return true si l'Item a été ajouté, false sinon
-     * @throws NullPointerException si les arguments sont {@code null}
+     * Attempts to add the given item to the backpack at the specified starting position and displays the result.
+     *
+     * @param backpack The target backpack.
+     * @param newItem The item instance to add.
+     * @param startPos The top-left position for placement.
+     * @return {@code true} if the item was added successfully, {@code false} otherwise.
+     * @throws NullPointerException if any argument is {@code null}.
      */
     private boolean ItemPlacement(BackPack backpack, ItemInstance newItem, Position startPos) {
     	Objects.requireNonNull(backpack);
@@ -238,12 +276,13 @@ public class View implements CombatInteractionDelegate {
     }
     
     /**
-     * Gère la lecture finale des coordonnées et la tentative d'ajout de l'item.
-     * @param backpack Le sac à dos cible.
-     * @param currentInstance L'ItemInstance à placer.
-     * @param scanner L'objet Scanner pour la lecture.
-     * @return {@code true} si l'item a été ajouté avec succès, {@code false} sinon.
-     * @throws NullPointerException si les arguments sont {@code null}
+     * Handles the final reading of coordinates and the attempt to add the item.
+     *
+     * @param backpack The target backpack.
+     * @param currentInstance The {@code ItemInstance} to place.
+     * @param scanner The Scanner object for reading input.
+     * @return {@code true} if the item was added successfully, {@code false} otherwise.
+     * @throws NullPointerException if any argument is {@code null}.
      */
     private boolean handlePlacement(BackPack backpack, ItemInstance currentInstance, Scanner scanner) {
         Position startPos = readPlacementCoordinates(scanner);
@@ -252,56 +291,62 @@ public class View implements CombatInteractionDelegate {
     }
     
     /**
-     * 1. Lit et valide les coordonnées de l'item que l'utilisateur veut retirer.
-     * @param scanner L'objet Scanner pour la lecture.
-     * @return La Position saisie ou null en cas d'erreur irrécupérable.
+     * Reads and validates the coordinates for the item the user wishes to remove.
+     *
+     * @param scanner The Scanner object for reading input.
+     * @return The entered {@code Position} or {@code null} in case of irrecoverable input error.
+     * @throws NullPointerException if the argument is {@code null}.
      */
     private Position readItemRemovalCoordinates(Scanner scanner) {
         Objects.requireNonNull(scanner);
-        System.out.print("Entrez la LIGNE et la COLONNE de l'Item à retirer (ex: 1 3): ");
+        System.out.print("Enter the ROW and COLUMN of the Item to remove (e.g., 1 3): ");
         
         try {
             String[] parts = scanner.nextLine().trim().split("\\s+");
             if (parts.length < 2) {
-                System.err.println("Erreur: Format de coordonnées invalide. Attendu: LIGNE COLONNE.");
+                System.err.println("Error: Invalid coordinate format. Expected: ROW COLUMN.");
                 return null;
             }
             var r = Integer.parseInt(parts[0]);
             var c = Integer.parseInt(parts[1]);
             return new Position(r, c);
         } catch (NumberFormatException e) {
-            System.err.println("Erreur: La ligne ou la colonne doit être numérique.");
+            System.err.println("Error: Row or column must be numeric.");
             return null;
         }
     }
 
     /**
-     * 3. Gère l'interaction et les conséquences pour le retrait d'une Malédiction (Scénario 2).
-     * @param itemToRemove L'ItemInstance de la Malédiction.
-     * @param scanner L'objet Scanner.
+     * Handles the interaction and consequences for removing a {@code Curse} item.
+     *
+     * @param itemToRemove The {@code ItemInstance} of the Curse.
+     * @param scanner The Scanner object.
+     * @throws NullPointerException if itemToRemove or scanner is {@code null}.
      */
     private void handleCurseRemovalChoice(ItemInstance itemToRemove, Scanner scanner) {
-        System.out.println("C'est une Malédiction ! Voulez-vous la **retirer** (r) en subissant une pénalité de durée, ou la **garder** (g) ?");
-        System.out.print("Choix (r/g): ");
+        System.out.println("This is a Curse! Do you want to **Remove** (r) it, suffering a penalty, or **Keep** (g) it?");
+        System.out.print("Choice (r/g): ");
         String curseChoice = scanner.nextLine().trim().toUpperCase();
 
         if (curseChoice.equals("R")) {
             if (this.backPack.removeItem(itemToRemove)) {
                 this.heros.applyCurseRemovalPenalty(); //Application de la pénalité HP Max
-                System.out.println("Malédiction retirée. Pénalité de HP Max appliquée pour 2 combats.");
+                System.out.println("Curse removed. Max HP penalty applied for 2 combats.");
             } else {
-                System.err.println("Erreur interne lors du retrait de la malédiction.");
+                System.err.println("Internal error while removing the curse.");
             }
         } else {
-            System.out.println("Malédiction conservée.");
+            System.out.println("Curse kept in place.");
         }
     }
 
 
     /**
-     * 2. Exécute la logique de retrait à partir de la position cible.
-     * C'est l'ancienne méthode handleRemoveItem, renommée pour clarifier son rôle.
-     * @param scanner L'objet Scanner pour l'interaction.
+     * Executes the removal logic based on the target position, distinguishing between
+     * a {@code Curse} (forced destruction/penalty) and a normal {@code Item} (choice to discard/reserve).
+     *
+     * @param scanner The Scanner object for interaction.
+     * @throws NullPointerException if scanner is {@code null}.
      */
     public void processItemRemoval(Scanner scanner) {
         Position targetPos = readItemRemovalCoordinates(scanner);
@@ -314,24 +359,25 @@ public class View implements CombatInteractionDelegate {
                 handleCurseRemovalChoice(itemToRemove, scanner);
             } else {
                 if (this.backPack.removeItem(itemToRemove)) {
-                    System.out.println("Item " + itemToRemove.getName() + " retiré avec succès.");
+                    System.out.println("Item " + itemToRemove.getName() + " removed successfully.");
                 } else {
-                    System.err.println("Erreur interne lors du retrait de l'item.");
+                    System.err.println("Error during item removal.");
                 }
             }
         } else {
-            System.err.println("Aucun item trouvé à la position " + targetPos + ".");
+            System.err.println("No item found at position " + targetPos + ".");
         }
     }
     
     /**
-     * Gère les commandes utilisateur ('r', 't', 'q') avant de procéder au placement.
-     * Permet la rotation de l'item en cours ou le retrait d'un item existant.
-     * @param backpack Le sac à dos actuel.
-     * @param currentInstance L'ItemInstance que l'utilisateur tente de placer.
-     * @param scanner L'objet Scanner pour la lecture des commandes.
-     * @return {@code true} pour continuer (placement ou attente), {@code false} pour quitter.
-     *  @throws NullPointerException si les arguments sont {@code null}
+     * Handles user commands ('r', 't', 'q') before proceeding to item placement.
+     * Allows rotation of the current item, removal (and potential reservation) of an existing item, or quitting.
+     *
+     * @param backpack The current backpack.
+     * @param currentInstance The {@code ItemInstance} the user is trying to place.
+     * @param scanner The Scanner object for reading commands.
+     * @return {@code true} to continue (placement attempt or wait for next command), {@code false} to quit the loop.
+     * @throws NullPointerException if arguments are {@code null}.
      */
     private boolean handleCommands(BackPack backpack, ItemInstance currentInstance, Scanner scanner) {
     	Objects.requireNonNull(backpack);

@@ -6,21 +6,29 @@ import java.util.Objects;
 
 
 /**
- * Représente une instance d'un Item dans le sac à dos
- * Gère les états variables comme la rotation
+ * Represents an instance of an Item in the backpack.
+ * Manages variable states such as rotation.
  */
 public class ItemInstance {
 
     private final Item baseItem;
     private int rotationAngle = 0;
 
+    /**
+     * Creates a new instance of an Item.
+     *
+     * @param item the base item
+     * @throws NullPointerException if the item is null
+     */
     public ItemInstance(Item item) {
         Objects.requireNonNull(item);
         this.baseItem = item;
     }
     
     /**
-     * Met à jour l'angle de rotation de l'item
+     * Rotates the item by 90 degrees clockwise.
+     *
+     * @throws IllegalStateException if the item cannot be rotated
      */
     public void rotate() {
       if (!baseItem.rotatable()) {
@@ -30,24 +38,27 @@ public class ItemInstance {
     }
 
     /**
-     * Méthode accesseur
-     * @return l'angle de rotation
+     * Returns the current rotation angle of the item.
+     *
+     * @return the rotation angle in degrees
      */
     public int getRotationAngle() {
         return this.rotationAngle;
     }
     
     /**
-     * Modifie la forme de l'item en le tournant
-     * @return une liste contenant les nouvelles positions de l'item
+     * Returns the current shape of the item based on its rotation.
+     *
+     * @return a list of positions representing the rotated shape
      */
     public List<Position> getCurrentShape() {
         return calculateRotatedShape(this.baseItem.pos(), this.rotationAngle);
     }
     
     /**
-     * Méthode accesseur
-     * @return le nom de l'item
+     * Returns the name of the base item.
+     *
+     * @return the item's name
      */
     public String getName() {
         return this.baseItem.name();
@@ -59,10 +70,11 @@ public class ItemInstance {
     }
 
     /**
-     * Calcule la nouvelle forme de l'item
-     * @param originalShape
-     * @param angle
-     * @return une liste contenant les nouvelles positions de l'item
+     * Calculates the rotated shape of the item according to the rotation angle.
+     *
+     * @param originalShape the original shape of the item
+     * @param angle the rotation angle in degrees
+     * @return a list of positions representing the rotated shape
      */
     private List<Position> calculateRotatedShape(List<Position> originalShape, int angle) {
       Objects.requireNonNull(originalShape);
@@ -75,9 +87,10 @@ public class ItemInstance {
     }
 
     /**
-     * Tourne l'item a 90 degré dans le sens des aiguilles d'une montre
-     * @param shape
-     * @return une liste contenant les nouvelles positions de l'item
+     * Rotates the shape 90 degrees clockwise and normalizes it to start at (0,0).
+     *
+     * @param shape the original shape
+     * @return the rotated and normalized shape
      */
     private List<Position> rotateShape90(List<Position> shape) {
       Objects.requireNonNull(shape);
@@ -87,21 +100,21 @@ public class ItemInstance {
             var newC = -elmt.row();
             list.add(new Position(newR, newC));
         }
-        var minR = list.stream()
-            .mapToInt(Position::row)
-            .min()
-            .orElse(0);
-        var minC = list.stream()
-            .mapToInt(Position::column)
-            .min()
-            .orElse(0);
+        var minR = list.stream().mapToInt(Position::row).min().orElse(0);
+        var minC = list.stream().mapToInt(Position::column).min().orElse(0);
         var normalized = new ArrayList<Position>();
         for (var elmt : list) {
             normalized.add(new Position(elmt.row() - minR, elmt.column() - minC));
         }
+        this.rotationAngle = 0; // Reset angle after normalization
         return normalized;
     }
     
+    /**
+     * Returns the base item.
+     *
+     * @return the base item
+     */
     public Item getItem() {
       return this.baseItem;
     } 

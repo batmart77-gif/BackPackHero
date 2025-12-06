@@ -31,7 +31,7 @@ public class Main {
     remplirSacADos(heros, factory);
     Dungeon donjon = DungeonGenerator.createDungeonPhase1();
     View view = new View(heros.getBackpack(), factory, heros);
-    Jeu jeu = new Jeu(heros, donjon, view); 
+    Jeu jeu = new Jeu(heros, donjon, view);
     Scanner scanner = new Scanner(System.in); 
     lancerBoucleJeu(jeu, scanner);
     finDePartie(jeu, heros);

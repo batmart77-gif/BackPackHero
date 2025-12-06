@@ -8,13 +8,13 @@ import java.util.Optional;
 
 
 /**
- * Représente le sac à dos du héros
+ * Represents the hero's backpack grid containing placed items.
  */
 public class BackPack {
   
-  /**
-     * Map principale: associe chaque {@code ItemInstance} à la liste des
-     * {@code Position} ABSOLUES qu'il occupe dans la grille.
+	/**
+     * Main map: associates each {@code ItemInstance} with the list
+     * of ABSOLUTE {@code Position} it occupies in the grid.
      */
   private final HashMap<ItemInstance, List<Position>> backpack;
   
@@ -23,12 +23,17 @@ public class BackPack {
   private int goldQuantity;
   
   /**
-     * La grille représentant les cases du sac à dos. Chaque case contient
-     * l'ItemInstance qui l'occupe, ou {@code null} si elle est libre.
-     */
-  //private final ItemInstance[][] grid;
+   * The grid representing the backpack tiles.
+   * Each tile contains the occupying {@code ItemInstance}, or {@code null} if empty.
+   */
   private ItemInstance[][] grid;
 
+  /**
+   * Creates a backpack of the given size.
+   *
+   * @param row    number of rows
+   * @param column number of columns
+   */
   public BackPack(int row, int column) {
     this.backpack = new HashMap<>();
     this.grid = new ItemInstance[row][column];
@@ -37,32 +42,36 @@ public class BackPack {
     this.goldQuantity = 0;
   }
 
+  /**
+   * Creates the default starting backpack (3 rows × 5 columns).
+   */
   public BackPack() {
-    this(3, 3);
+    this(3, 5);
   }
   
-  
   /**
-     * Incrémente la quantité d'or du héros.
-     * @param amount La quantité d'or à ajouter (doit être >= 0).
-     * @throws IllegalArgumentException si la quantité est négative.
-     */
+   * Adds gold to the hero's wallet.
+   *
+   * @param amount non-negative gold amount
+   * @throws IllegalArgumentException if {@code amount < 0}
+   */
     public void addGold(int amount) {
         if (amount < 0) {
-            throw new IllegalArgumentException("La quantité d'or à ajouter ne peut pas être négative.");
+            throw new IllegalArgumentException("Gold amount cannot be negative.");
         }
         this.goldQuantity += amount;
     }
   
     /**
-     * Tente de dépenser une certaine quantité d'or.
-     * @param amount La quantité d'or à dépenser (doit être > 0).
-     * @return true si la dépense a réussi, false sinon (fonds insuffisants).
-     * @throws IllegalArgumentException si la quantité est négative ou nulle.
+     * Attempts to spend gold.
+     *
+     * @param amount positive amount of gold to spend
+     * @return {@code true} if the hero had enough gold, {@code false} otherwise
+     * @throws IllegalArgumentException if {@code amount <= 0}
      */
     public boolean spendGold(int amount) {
         if (amount <= 0) {
-            throw new IllegalArgumentException("La quantité d'or à dépenser doit être positive.");
+            throw new IllegalArgumentException("Gold to spend must be positive.");
         }
         
         if (this.goldQuantity >= amount) {
@@ -73,20 +82,19 @@ public class BackPack {
     }
     
     /**
-     * Renvoie la quantité totale d'or possédée par le héros.
-     * @return La quantité d'or actuelle.
+     * @return the current gold amount.
      */
     public int getGoldQuantity() {
         return this.goldQuantity;
     }
     
-  /**
-     * Vérifie si l'espace est suffisant et libre pour placer l'objet à la position
-     * d'ancrage spécifiée, en tenant compte de la forme actuelle (rotation) de l'objet
-     * @param itemInstance L'ItemInstance à vérifier
-     * @param startPos La Position (coin supérieur gauche) de placement souhaitée
-     * @return {@code true} si l'espace est libre, {@code false} sinon (collision ou dépassement)
-     * @throws NullPointerException si un argument est {@code null}
+    /**
+     * Checks whether there is enough free space to place the item at the given anchor position.
+     *
+     * @param itemInstance the item instance to check
+     * @param startPos     the anchor position
+     * @return {@code true} if the placement is possible, {@code false} otherwise
+     * @throws NullPointerException if arguments are {@code null}
      */
   private boolean checkIfEnoughSpace(ItemInstance itemInstance, Position startPos) {
     Objects.requireNonNull(itemInstance);
@@ -95,10 +103,12 @@ public class BackPack {
     for (var elmt : listPos) {
       var newRow = startPos.row() + elmt.row();
       var newCol = startPos.column() + elmt.column();
-      if (!isInside(elmt)) {
-        return false;
+      if (!isInside(new Position(newRow, newCol))) {
+    	  System.out.println("Placement failed: outside backpack bounds.");
+          return false;
       }
       if (this.grid[newRow][newCol] != null) {
+    	  System.out.println("Placement failed: tile already occupied.");
         return false;
       }
     }
@@ -111,12 +121,12 @@ public class BackPack {
   }
   
   /**
-     * Place effectivement l'ItemInstance dans la grille et enregistre ses positions
-     * Cette méthode est privée et suppose que les vérifications d'espace ont déjà été faites
-     * @param itemInstance L'ItemInstance à placer
-     * @param startPos La Position (ancrage) où le placer
-     * @throws NullPointerException si un argument est {@code null}
-     */
+   * Actually places the item in the grid after validation.
+   *
+   * @param itemInstance item to place
+   * @param startPos     anchor position
+   * @throws NullPointerException if arguments are {@code null}
+   */
   private void placeItem(ItemInstance itemInstance, Position startPos) {
     Objects.requireNonNull(itemInstance);
     Objects.requireNonNull(startPos);
@@ -133,12 +143,12 @@ public class BackPack {
   }
 
   /**
-     * Ajoute un {@code ItemInstance} au sac à dos à la position de départ spécifiée
-     * @param itemInstance L'ItemInstance à ajouter
-     * @param startPos La Position (ancrage) où le joueur souhaite placer l'Item
-     * @return {@code true} si l'Item a été ajouté, {@code false} si le placement est invalide
-     * @throws NullPointerException si un argument est {@code null}
-     */
+   * Adds an {@code ItemInstance} to the backpack at the given position.
+   *
+   * @param itemInstance the instance to add
+   * @param startPos     anchor position
+   * @return {@code true} if successfully added, {@code false} otherwise
+   */
   public boolean add(ItemInstance itemInstance, Position startPos) {
     Objects.requireNonNull(itemInstance);
     Objects.requireNonNull(startPos);
@@ -155,6 +165,10 @@ public class BackPack {
     }
   }
   
+  /**
+   * Special placement logic for curses:
+   * they overwrite existing items.
+   */
   private boolean addCurse(ItemInstance curse, Position startPos) {
     Objects.requireNonNull(curse);
     Objects.requireNonNull(startPos);
@@ -167,7 +181,6 @@ public class BackPack {
             if (!isInside(target)) {
                 return false;
             }
-            // S'il y a un item, on le supprime définitivement
             var overlapping = getItemAt(target).orElse(null);
             if (overlapping != null) {
                 removeItem(overlapping);
@@ -178,11 +191,11 @@ public class BackPack {
     }
 
   /**
-     * Supprime un {@code ItemInstance} du sac à dos et libère toutes les cases qu'il occupait
-     * @param itemInstance L'ItemInstance à retirer
-     * @return {@code true} si l'Item a été retiré, {@code false} s'il n'était pas dans le sac
-     * @throws NullPointerException si l'argument est {@code null}
-     */
+   * Removes an {@code ItemInstance} from the backpack and clears its tiles.
+   *
+   * @param itemInstance item to remove
+   * @return {@code true} if it was removed, {@code false} otherwise
+   */
   public boolean removeItem(ItemInstance itemInstance) {
     Objects.requireNonNull(itemInstance);
     var startPos = this.backpack.remove(itemInstance);
@@ -202,11 +215,11 @@ public class BackPack {
   }
 
   /**
-     * Retourne l'{@code ItemInstance} présent à une position donnée du sac à dos
-     * @param pos La Position à vérifier
-     * @return Un {@code Optional} contenant l'ItemInstance s'il y en a un, ou {@code Optional.empty()} sinon
-     * @throws NullPointerException si la position est {@code null}
-     */
+   * Returns the item present at the given position.
+   *
+   * @param pos position in the grid
+   * @return an Optional containing the item instance or empty if none
+   */
   public Optional<ItemInstance> getItemAt(Position pos) {
     Objects.requireNonNull(pos);
     if (pos.row() >= 0 && pos.row() < row && pos.column() >= 0 && pos.column() < column) {
@@ -215,13 +228,17 @@ public class BackPack {
     return Optional.empty();
   }
   
-  public java.util.List<ItemInstance> getItems() {
-    return new java.util.ArrayList<>(this.backpack.keySet());
+  /**
+   * @return all items currently in the backpack.
+   */
+  public List<ItemInstance> getItems() {
+    return new ArrayList<>(this.backpack.keySet());
   }
   
   /**
-   * Agrandit le sac à dos en ajoutant des colonnes.
-   * @param extraColumns Nombre de colonnes à ajouter (ex: 1 colonne = 3 cases car 3 lignes).
+   * Expands the backpack by adding columns.
+   *
+   * @param extraColumns number of additional columns
    */
   public void expand(int extraColumns) {
       if (extraColumns <= 0) return;
@@ -234,7 +251,7 @@ public class BackPack {
       // Mise à jour
       this.grid = newGrid;
       this.column = newColumnCount;    
-      System.out.println("Le sac s'est agrandi ! (Nouvelle taille : " + this.row + "x" + this.column + ")");
+      System.out.println("The backpack expanded! New size: " + this.row + "x" + this.column + ")");
   }
 
   public int getRows() {

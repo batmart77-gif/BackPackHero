@@ -85,7 +85,7 @@ public final class Combat {
 
     //On récupère l'Item de base et on l'utilise.
     // Cela suppose que l'interface Item a une méthode: use(Heros, Ennemi)
-    boolean success = instance.getItem().utiliser(heros, target);
+    boolean success = instance.getItem().use(heros, target);
 
     // Si l'action a réussi et a tué un ennemi, on le retire de la liste
     if (success && target != null && !target.estVivant()) {

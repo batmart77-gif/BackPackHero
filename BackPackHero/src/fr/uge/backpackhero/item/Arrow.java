@@ -7,9 +7,25 @@ import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.entites.Heros;
 
 
-
+/**
+ * Represents an arrow that can be fired by a ranged weapon.
+ * Arrows deal damage when used and occupy a specific shape
+ * inside the backpack inventory.
+ *
+ * @param name   The name of the arrow.
+ * @param pos    The list of relative positions describing the shape of the item in the backpack
+ * @param rarity The rarity level of the arrow.
+ * @param stats  The amount of damage the arrow deals.
+ * @param price  The buying and selling price of the armor.
+ */
 public record Arrow(String name, List<Position> pos, Rarity rarity, int stats, int price) implements Item {
 
+	/**
+     * Compact constructor with validation.
+     *
+     * @throws NullPointerException     if name, rarity, or pos is null.
+     * @throws IllegalArgumentException if stats or price is negative.
+     */
 	public Arrow {
 		Objects.requireNonNull(name);
 		Objects.requireNonNull(pos);
@@ -20,26 +36,43 @@ public record Arrow(String name, List<Position> pos, Rarity rarity, int stats, i
 		}
 	}
 	
+	/**
+     * Returns a human-readable description of the arrow.
+     *
+     * @return A string describing the arrow and its gameplay effect.
+     */
 	public String details() {
 		return "Arrow " + name + ", " + rarity.toString() + ", deals " + stats + " damage on use, can be sold or bought to a merchant for " + price;
 	}
 	
+	/**
+     * Returns a compact identifier for display purposes.
+     *
+     * @return A short code representing this arrow.
+     *
+     * @throws IllegalArgumentException if no short form is defined for this arrow name.
+     */
 	@Override
 	public String toString() {
 		return switch(name) {
 		case "Short Arrow" -> "SA";
-		default -> throw new IllegalArgumentException("Je connais pas ca c'est quoi ? ");
+		default -> throw new IllegalArgumentException("Unknown arrow type: " + name);
 		};
 	}
 	
+	/**
+     * Attempts to use the arrow in combat.
+     *
+     * @param hero the hero using the item
+     * @param target the enemy to target (can be null)
+     * @return true if the item was successfully used, false otherwise
+     */
 	@Override
-  public boolean utiliser(Heros heros, Ennemi cible) {
+  public boolean use(Heros heros, Ennemi target) {
     Objects.requireNonNull(heros);
-    if (cible == null || !cible.estVivant()) return false;
-
-    // Pas de coût en énergie pour la flèche (dans ce record)
-    cible.recevoirDegats(stats);
-    System.out.println(heros + " tire " + name + " (" + stats + " dégâts) !");
+    if (target == null || !target.estVivant()) return false;
+    target.recevoirDegats(stats);
+    System.out.println(heros + " shoots " + name + " (" + stats + " damage) !");
     return true;
   }
 	

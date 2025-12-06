@@ -2,6 +2,9 @@ package fr.uge.backpackhero.item;
 
 import fr.uge.backpackhero.entites.Heros;
 
+/**
+ * Main entry point for testing the backpack and item system.
+ */
 public class Main {
 
   public static void main(String[] args) {

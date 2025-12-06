@@ -6,7 +6,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
+/**
+ * A factory class responsible for creating concrete {@code Item} objects
+ * based on a weighted rarity distribution and item type {@code Stuff}.
+ */
 public class StuffFactory {
+	
+	/**
+     * Defines the weighted probability for drawing a specific rarity.
+     * Higher weight means higher chance of being selected.
+     */
 	public static final Map<Rarity, Integer> RARITY_WEIGHTS = Map.of(
 	        Rarity.COMMON, 800,
 	        Rarity.UNCOMMON, 150,
@@ -15,10 +24,18 @@ public class StuffFactory {
 	    );
 	private final Random random = new Random();
 	
-	
+	/**
+     * Creates a new instance of the {@code StuffFactory}.
+     */
 	public StuffFactory() {
 	}
 	
+	/**
+     * Randomly selects a {@code Rarity} level based on the defined {@code RARITY_WEIGHTS}.
+     *
+     * @return A randomly determined {@code Rarity}.
+     * @throws IllegalStateException if the random roll is outside the cumulative weight range.
+     */
 	private Rarity randomRarity() {
 	    int total = RARITY_WEIGHTS.values().stream()
 	    		.mapToInt(i -> i)
@@ -35,6 +52,12 @@ public class StuffFactory {
 	    throw new IllegalStateException("Unexpected rarity roll");
 	}
 	
+	/**
+     * Randomly selects an item type ({@code Stuff}) that matches the given rarity level.
+     *
+     * @param rarity The target rarity level.
+     * @return A randomly selected {@code Stuff} enumeration constant of the specified rarity.
+     */
 	private Stuff randomStuffOfRarity(Rarity rarity) {
 	    var list = Arrays.stream(Stuff.values())
 	            .filter(s -> s.rarity() == rarity)
@@ -42,6 +65,12 @@ public class StuffFactory {
 	    return list.get(random.nextInt(list.size()));
 	}
 	
+	/**
+     * Generates a complete, random {@code Item} instance by first rolling a rarity
+     * and then selecting a corresponding item type.
+     *
+     * @return A newly created {@code Item} instance.
+     */
 	public Item randomItem() {
 	    var rarity = randomRarity();              // 1) tirer une rareté pondérée
 	    var stuff = randomStuffOfRarity(rarity);  // 2) tirer un item de cette rareté
@@ -49,10 +78,12 @@ public class StuffFactory {
 	}
 	
 	/**
-	 * Crée une arme en fonction du stuff passé en argument, voir l'enum stuff pour voir quels sont les stuff disposnibles.
-	 * @param stuff
-	 * @return l'item crée
-	 * 
+	 * Creates a concrete {@code Item} object based on the provided {@code Stuff} type.
+	 *
+	 * @param stuff The item type enumeration constant specifying which item to create.
+	 * @return The newly created concrete {@code Item} object.
+	 * @throws NullPointerException if {@code stuff} is {@code null}.
+	 * @throws IllegalArgumentException if the {@code Stuff} type is unknown or improperly handled.
 	 */
 	public Item create(Stuff stuff) {
 		Objects.requireNonNull(stuff);
