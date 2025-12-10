@@ -23,5 +23,6 @@ public enum Mode {
   /**
    * The game is won, the player has finished the dungeon.
    */
+  
   GAGNE 
 }
