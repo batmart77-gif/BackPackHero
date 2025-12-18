@@ -1,7 +1,7 @@
 package fr.uge.backpackhero.donjon;
 
 /**
- * La salle qui contient la porte de sortie.
- * Permet de passer à l'étage suivant.
+ * Represents the room that contains the exit door.
+ * Entering this room allows the hero to pass to the next floor of the dungeon (or win the game if it is the last floor).
  */
 public record ExitRoom() implements Room {}

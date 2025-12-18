@@ -1,16 +1,22 @@
 package fr.uge.backpackhero.combat;
 
 /**
- * Représente l'intention d'attaquer.
- * Stocke le montant des dégâts prévus.
+ * Represents the intention to attack.
+ * Stores the amount of damage planned by the enemy.
  *
- * @param damage Le nombre de points de dégâts (damage = dégâts).
+ * @param damage The amount of damage points.
  */
 public record AttackAction(int damage) implements EnemyAction {
   
+  /**
+   * Compact constructor to validate the damage value.
+   *
+   * @param damage The amount of damage.
+   * @throws IllegalArgumentException if the damage is negative.
+   */
   public AttackAction {
     if (damage < 0) {
-      throw new IllegalArgumentException("Les dégâts (damage) ne peuvent pas être négatifs");
+      throw new IllegalArgumentException("Damage cannot be negative");
     }
   }
   

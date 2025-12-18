@@ -1,7 +1,7 @@
 package fr.uge.backpackhero.donjon;
 
 /**
- * Un couloir vide.
- * Il ne se passe rien ici, on peut juste traverser.
+ * Represents an empty corridor room in the dungeon.
+ * Nothing happens here, and the hero can safely pass through this room.
  */
 public record Corridor() implements Room {}

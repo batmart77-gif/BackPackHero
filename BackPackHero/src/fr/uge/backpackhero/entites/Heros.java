@@ -12,25 +12,45 @@ import fr.uge.backpackhero.item.BackPack;
 import fr.uge.backpackhero.item.Curse;
 import fr.uge.backpackhero.item.ItemInstance;
 
+/**
+ * The player character class. Manages stats, inventory, combat actions, status effects, and level progression.
+ */
 public final class Heros {
-  
+  /** Current health points (HP). */
   private int hp;
-  private  int maxHp;
+  /** Maximum health points (HP). */
+  private int maxHp;
+  /** Current energy available for actions. */
   private int energy;
+  /** Maximum energy available per turn. */
   private final int maxEnergy;
+  /** Temporary protection (block) applied during the current turn. */
   private int protection;
+  /** Current experience points accumulated. */
   private int currentXp;
+  /** Current hero level. */
   private int currentLevel;
+  /** XP required to reach the next level. */
   private int xpToNextLevel;
+  /** The hero's inventory. */
   private final BackPack backpack;
+  /** Counter for consecutive curse refusals, used to determine penalty damage. */
   private int curseRefusalCount = 0;
+  /** Map storing the current status effects (Effect -> Stack Count). */
   private final Map<Effect, Integer> statusEffects = new HashMap<>();
   
+  /** Rate (20%) at which maximum HP is reduced when a curse is removed. */
   private final double HP_MAX_PENALTY_RATE = 0.20;
+  /** Duration (in combats remaining) of the curse removal penalty. */
   private int cursePenaltyDuration = 0;
+  /** The actual amount Max HP was reduced by due to the penalty. */
   private int hpMaxPenalty = 0;
+  /** Damage inflicted when refusing a curse, increases per refusal. */
   private int currentCurseRefusalDamage = 0;
 
+  /**
+   * Constructs a new Hero with base starting statistics (40 HP, 3 Energy, Lvl 1).
+   */
   public Heros() {
     this.maxHp = 40;
     this.hp = maxHp;
@@ -41,18 +61,19 @@ public final class Heros {
     this.currentXp = 0;
     this.currentLevel = 1;
     this.xpToNextLevel = 10;
-    // On initialise un sac vide par défaut (3x5)
+    // Initializes the default backpack
     this.backpack = new BackPack(); 
   }
 
   /**
-   * Réinitialise l'énergie et la protection au début du tour.
+   * Resets energy and protection at the beginning of the combat turn.
+   * Also calculates and applies passive protection from {@link Armor} items in the backpack.
    */
   public void debuterTourCombat() {
     this.energy = maxEnergy;
     this.protection = 0;
     
-    // On ajoute la protection passive des Armures présentes dans le sac
+    // Apply passive protection from Armor items
     for (var item : backpack.getItems()) {
         if (item.getItem() instanceof Armor armor) {
             this.protection += armor.stats(); 
@@ -60,15 +81,21 @@ public final class Heros {
     }
   }
 
+  /**
+   * Inflicts damage on the hero.
+   * Handles damage absorption from Protection and the evasion logic from the Dodge status.
+   *
+   * @param damage The amount of damage to inflict.
+   * @throws IllegalArgumentException if the damage amount is negative.
+   */
   public void recevoirDegats(int damage) {
     if (damage < 0) throw new IllegalArgumentException("Dégâts négatifs interdits");
     
-    // Gestion ESQUIVE (DODGE)
-    // "Peut prévenir les dommages subis jusqu'à X fois"
+    // Handle DODGE (Evasion)
     int dodge = getStatus(Effect.DODGE);
     if (dodge > 0) {
         System.out.println("ESQUIVE ! (" + (dodge - 1) + " charges restantes)");
-        return; // 0 Dégâts pris
+        return; // 0 damage taken
     }
     
     int absorbed = Math.min(damage, this.protection);
@@ -80,22 +107,37 @@ public final class Heros {
     }
   }
 
+  /**
+   * Adds protection (block) to the hero.
+   *
+   * @param amount The amount of protection to add.
+   * @throws IllegalArgumentException if the amount is negative.
+   */
   public void ajouterProtection(int amount) {
     if (amount < 0) throw new IllegalArgumentException("Protection négative interdite");
     this.protection += amount;
   }
 
+  /**
+   * Heals the hero, restoring HP up to the maximum HP cap.
+   *
+   * @param amount The amount of HP to restore.
+   * @throws IllegalArgumentException if the amount is negative.
+   */
   public void soigner(int amount) {
     if (amount < 0) throw new IllegalArgumentException("Soin négatif interdit");
     this.hp = Math.min(this.hp + amount, maxHp);
   }
 
   /**
-   * Tente de dépenser de l'énergie.
-   * @return true si l'énergie a été dépensée, false si insuffisant.
+   * Tries to spend energy.
+   *
+   * @param cost The energy cost.
+   * @return {@code true} if the energy was spent successfully, {@code false} if insufficient.
+   * @throws IllegalArgumentException if the cost is negative.
    */
   public boolean depenserEnergie(int cost) {
-    if (cost < 0) throw new IllegalArgumentException("Coût négatif interdit");    
+    if (cost < 0) throw new IllegalArgumentException("Coût négatif interdit");     
     if (this.energy >= cost) {
       this.energy -= cost;
       return true;
@@ -103,11 +145,20 @@ public final class Heros {
     return false;
   }
 
+  /**
+   * Checks if the hero is alive (HP > 0).
+   *
+   * @return {@code true} if the hero is alive.
+   */
   public boolean estVivant() {
     return this.hp > 0;
   }
   
-  // Accès au sac pour l'interface graphique ou la gestion d'inventaire
+  /**
+   * Gets the hero's backpack.
+   *
+   * @return The {@link BackPack} instance.
+   */
   public BackPack getBackpack() {
     return backpack;
   }
@@ -117,55 +168,83 @@ public final class Heros {
     return "Héros (" + hp + "/" + maxHp + " PV)";
   }
   
+  /**
+   * Grants experience points to the hero.
+   * Triggers a level up if the XP threshold is met.
+   *
+   * @param amount The amount of XP gained.
+   * @throws IllegalArgumentException if the amount is negative.
+   */
   public void gainXp(int amount) {
     if (amount < 0) throw new IllegalArgumentException("XP négative");
-    this.currentXp += amount;    
+    this.currentXp += amount;     
     while (this.currentXp >= this.xpToNextLevel) {
       levelUp();
     }
   }
+
+  /**
+   * Handles the level up logic: increases level, calculates new XP threshold, and expands the backpack.
+   */
   private void levelUp() {
     this.currentXp -= this.xpToNextLevel;
     this.currentLevel++;
-    this.xpToNextLevel = this.xpToNextLevel * 3 / 2;
+    this.xpToNextLevel = this.xpToNextLevel * 3 / 2; // Increases XP required by 50%
     System.out.println("NIVEAU SUPÉRIEUR ! Vous êtes niveau " + currentLevel + " !");
-    backpack.expand(1);
+    backpack.expand(1); // Expands backpack by 1 unit (row/col, depending on implementation)
   }
 
-  
-
+  /**
+   * Applies the damage penalty for immediately refusing a curse.
+   * The damage amount increases with each consecutive refusal.
+   */
   private void appliquerPenaliteRefus() {
     curseRefusalCount++;
-    System.out.println("Vous subissez " + curseRefusalCount + " dégâts de pénalité.");   
+    System.out.println("Vous subissez " + curseRefusalCount + " dégâts de pénalité.");    
     this.recevoirDegats(curseRefusalCount);
   }
   
-  /** Ajoute X cumuls d'un effet */
+  /**
+   * Adds X stacks of a specific status effect to the hero.
+   *
+   * @param effect The status effect to add.
+   * @param amount The number of stacks to add.
+   */
   public void addStatus(Effect effect, int amount) {
     statusEffects.merge(effect, amount, Integer::sum);
     System.out.println("Effet appliqué : " + effect.getNom() + " (Cumul: " + getStatus(effect) + ")");
   }
 
-  /** Récupère la valeur X d'un effet (0 si absent) */
+  /**
+   * Retrieves the current stack count (X value) of a specific status effect.
+   *
+   * @param effect The status effect to check.
+   * @return The stack count, or 0 if the effect is absent.
+   */
   private int getStatus(Effect effect) {
     return statusEffects.getOrDefault(effect, 0);
   }
 
-
-  /** * Calcule les dégâts RÉELS infligés par une arme (Rage / Faiblesse).
-   * @param baseDamage Les dégâts de l'arme (stats).
+  /**
+   * Calculates the actual damage output of an item based on status effects (Rage/Weak).
+   *
+   * @param baseDamage The base damage stat of the item.
+   * @return The final damage output.
    */
   public int calculateDamageOutput(int baseDamage) {
     int bonus = getStatus(Effect.RAGE);
     int malus = getStatus(Effect.WEAK);
-    int total = Math.max(0, baseDamage + bonus - malus);      
+    int total = Math.max(0, baseDamage + bonus - malus);        
     if (bonus > 0) System.out.println("  (Bonus Rage +" + bonus + ")");
     if (malus > 0) System.out.println("  (Malus Faiblesse -" + malus + ")");
     return total;
   }
 
-  /** * Calcule le blocage RÉEL fourni par un bouclier (Hâte / Lenteur).
-   * @param baseBlock Le blocage du bouclier (stats).
+  /**
+   * Calculates the actual block output of an item based on status effects (Haste/Slow).
+   *
+   * @param baseBlock The base block stat of the item.
+   * @return The final block output.
    */
   public int calculateBlockOutput(int baseBlock) {
     int bonus = getStatus(Effect.HASTE);
@@ -176,16 +255,20 @@ public final class Heros {
     return total;
   }
 
-  // --- GESTION DU TOUR (DÉBUT / FIN) ---
+  // --- TURN MANAGEMENT (START / END) ---
 
+  /**
+   * Triggers effects that occur at the START of the hero's turn.
+   * Handles {@link Effect#REGEN} and {@link Effect#BURN}.
+   */
   public void triggerStartTurnEffects() {
-    // 1. Régénération
+    // 1. Regeneration
     int regen = getStatus(Effect.REGEN);
     if (regen > 0) {
       System.out.println("Régénération : +" + regen + " PV");
       soigner(regen);
     }
-    // 2. Brûlure (Dégâts directs sur l'armure puis PV)
+    // 2. Burn (Damage at the start of the turn)
     int burn = getStatus(Effect.BURN);
     if (burn > 0) {
       System.out.println("Brûlure : -" + burn + " PV");
@@ -193,31 +276,46 @@ public final class Heros {
     }
   }
 
+  /**
+   * Triggers effects that occur at the END of the hero's turn.
+   * Handles {@link Effect#POISON} and the general degradation of status stacks.
+   */
   public void triggerEndTurnEffects() {
-      // 1. Poison (Ignore l'armure !)
+      // 1. Poison (Ignores armor!)
       int poison = getStatus(Effect.POISON);
       if (poison > 0) {
           System.out.println("Poison : -" + poison + " PV (Ignore l'armure)");
-          this.hp = Math.max(0, this.hp - poison); // Tape direct dans les PV
+          this.hp = Math.max(0, this.hp - poison); // Direct HP damage
       }
-      // 2. Dégradation des effets (-1 partout)
-      // On utilise removeIf pour nettoyer ce qui tombe à 0
+      // 2. Degradation of effects (-1 stack everywhere at the end of the turn)
       statusEffects.replaceAll((e, v) -> v - 1);
       statusEffects.values().removeIf(v -> v <= 0);
   }
 
+  /**
+   * Gets the amount of gold the hero currently possesses.
+   *
+   * @return The current gold amount.
+   */
   public int getGold() {
     return backpack.getGoldQuantity();
   }
 
+  /**
+   * Adds gold to the hero's possession (stored in the backpack).
+   *
+   * @param montant The amount of gold to add.
+   */
   public void gagnerOr(int montant) {
     backpack.addGold(montant);
     System.out.println("+" + montant + " Or");
   }
 
   /**
-   * Tente de payer un montant.
-   * @return true si le paiement a réussi, false sinon.
+   * Tries to pay a required amount of gold.
+   *
+   * @param montant The amount to pay.
+   * @return {@code true} if the payment was successful, {@code false} otherwise (insufficient funds).
    */
   public boolean payer(int montant) {
     if (backpack.spendGold(montant)) {
@@ -227,76 +325,103 @@ public final class Heros {
     return false;
   }
 
+  /**
+   * Gets the current health points.
+   *
+   * @return Current HP.
+   */
   public int getPv() {
     return hp;
   }
 
+  /**
+   * Gets the maximum health points.
+   *
+   * @return Max HP.
+   */
   public int getPvMax() {
     return maxHp;
   }
 
+  /**
+   * Gets the current level.
+   *
+   * @return Current level.
+   */
   public int getLevel() {
     return currentLevel;
   }
 
+  /**
+   * Gets the current protection (block) amount.
+   *
+   * @return Current protection.
+   */
   public int getProtection() {
     return protection;
   }
 
+  /**
+   * Gets the current energy available.
+   *
+   * @return Current energy.
+   */
   public int getEnergie() {
     return energy;
   }
   
   /**
-   * Conséquence du Refus Immédiat de la Malédiction
-   * Le Héros subit des dégâts croissants et le compteur de dégâts augmente.
+   * Applies the self-damage penalty for refusing a forced curse immediately.
+   * The damage is cumulative (increases with each consecutive refusal).
    */
   public void refuseCurseImmediate() {
-      this.currentCurseRefusalDamage++; // Le dégât augmente à chaque refus
-      int damage = this.currentCurseRefusalDamage;
-      this.recevoirDegats(damage);
-      System.out.println("Refusé ! Vous subissez " + damage + " dégâts de pénalité.");
+    this.currentCurseRefusalDamage++; 
+    int damage = this.currentCurseRefusalDamage;
+    this.recevoirDegats(damage);
+    System.out.println("Refusé ! Vous subissez " + damage + " dégâts de pénalité.");
   }
   
   /**
-   * Conséquence de l'Acceptation Immédiate
-   * Ne fait rien d'autre que l'ajout dans le sac (qui sera fait par la View).
-   * On conserve cette méthode pour être explicite.
+   * Handles the consequence of immediately accepting a forced curse.
+   * Resets the consecutive refusal damage counter.
    */
   public void acceptCurseImmediate() {
-      // Si l'on accepte, le compteur de refus est réinitialisé, car le héros a cédé
-      this.currentCurseRefusalDamage = 0;
+    // If the curse is accepted, the refusal counter is reset.
+    this.currentCurseRefusalDamage = 0;
   }
-     
+      
   /**
-   * Applique la pénalité pour les 2 combats suivants.
+   * Applies the temporary Max HP penalty when a curse is removed by other means (e.g., in town).
+   * Sets the penalty duration (2 combats).
    */
   public void applyCurseRemovalPenalty() {
-  // 1. Calculer la pénalité
-      this.hpMaxPenalty = (int) (this.maxHp * HP_MAX_PENALTY_RATE);
+    // 1. Calculate the Max HP reduction amount (20%)
+    this.hpMaxPenalty = (int) (this.maxHp * HP_MAX_PENALTY_RATE);
       
-      // 2. Appliquer la réduction des HP Max
-      this.maxHp = this.maxHp - this.hpMaxPenalty;
+    // 2. Apply the Max HP reduction
+    this.maxHp = this.maxHp - this.hpMaxPenalty;
       
-      // 3. Assurer que les HP actuels ne dépassent pas le nouveau maximum
-      this.hp = Math.min(this.hp, this.maxHp);
-    this.cursePenaltyDuration = 2;
-      System.out.println("Pénalité de Malédiction appliquée. Défense réduite jusqu'à la fin du prochain combat !");
+      // 3. Ensure current HP doesn't exceed the new maximum
+    this.hp = Math.min(this.hp, this.maxHp);
+      
+    this.cursePenaltyDuration = 2; // Penalty lasts for 2 combats
+    System.out.println("Pénalité de Malédiction appliquée. Défense réduite jusqu'à la fin du prochain combat !");
   }
 
   /**
-   * Décrémente la durée de la pénalité.
+   * Decrements the duration of the curse removal penalty.
+   * Restores Max HP when the duration reaches zero.
    */
   public void decrementCursePenaltyDuration() {
-      if (this.cursePenaltyDuration > 0) {
-          this.cursePenaltyDuration--;
-          if (this.cursePenaltyDuration == 0) {
-            this.maxHp = this.maxHp + this.hpMaxPenalty;
-              this.hpMaxPenalty = 0;
-              System.out.println("La pénalité de Malédiction a été levée.");
-          } else {
-              System.out.println("La pénalité de Malédiction persiste. Durée restante: " + this.cursePenaltyDuration + " combat(s).");
-          }
+    if (this.cursePenaltyDuration > 0) {
+      this.cursePenaltyDuration--;
+      if (this.cursePenaltyDuration == 0) {
+        this.maxHp = this.maxHp + this.hpMaxPenalty;
+        this.hpMaxPenalty = 0;
+        System.out.println("La pénalité de Malédiction a été levée.");
+      } else {
+        System.out.println("La pénalité de Malédiction persiste. Durée restante: " + this.cursePenaltyDuration + " combat(s).");
       }
+    }
   }
 }

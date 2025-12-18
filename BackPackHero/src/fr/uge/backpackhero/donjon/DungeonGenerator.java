@@ -13,17 +13,24 @@ import fr.uge.backpackhero.item.Stuff;
 import fr.uge.backpackhero.item.StuffFactory;
 
 /**
- * Classe utilitaire pour générer le donjon fixe de la Phase 1.
+ * Utility class responsible for generating the fixed dungeon structure used in Phase 1
+ * (and providing randomized elements for Phase 2 combat encounters).
  */
 public final class DungeonGenerator {
+  /** Random number generator used for loot and enemy statistics. */
   private static final Random rdm = new Random();
 
+  /**
+   * Private constructor to prevent instantiation of this utility class.
+   */
   private DungeonGenerator() {
     
   }
 
   /**
-   * Crée le donjon complet (3 étages).
+   * Creates the complete dungeon structure consisting of 3 floors.
+   *
+   * @return The initialized {@link Dungeon} object.
    */
   public static Dungeon createDungeonPhase1() {
     List<Floor> floors = List.of(
@@ -35,12 +42,17 @@ public final class DungeonGenerator {
   }
   
   /**
-   * Crée un étage rectangulaire avec un chemin prédéfini.
+   * Creates a rectangular floor with a predefined linear path and fixed room types.
+   *
+   * @param name           The name of the floor (e.g., "Niveau 1").
+   * @param difficultyHp   Base HP/difficulty level for enemies on this floor.
+   * @param row            The row index where the main corridor is placed.
+   * @return The initialized {@link Floor} object.
    */
   private static Floor createFloor(String name, int difficultyHp, int row) {
     Room[][] map = new Room[5][11];
 
-    // Ligne 0 : Le chemin principal
+    // Ligne 0 : The main path rooms are placed on the specified row
     map[row][0] = new Corridor();
     map[row][1] = new EnemyRoom(createRandomEnemies(difficultyHp));
     map[row][2] = new TreasureRoom(createRandomLoot());
@@ -50,27 +62,33 @@ public final class DungeonGenerator {
     map[row][6] = new EnemyRoom(createRandomEnemies(difficultyHp + 10));
     map[row][7] = new TreasureRoom(createRandomLoot());    
     map[row][8] = new ExitRoom();
+    
+    // The starting position (0, row) is passed to the Floor constructor
     return new Floor(map, 0, row);
   }
   
+  /**
+   * Generates a list of enemies for a room, balancing between one large enemy (50%) or two smaller enemies (50%).
+   *
+   * @param difficultyBase The base HP value used for scaling enemy difficulty.
+   * @return A list containing one or two {@link Ennemi} instances with {@link RatLoupBehavior}.
+   */
   private static List<Ennemi> createRandomEnemies(int difficultyBase) {
     EnemyBehavior behavior = new RatLoupBehavior();
     List<Ennemi> enemies = new ArrayList<>();
-    
-    // 50% de chance : 1 Gros Ennemi OU 2 Petits Ennemis
+    // 50% chance: 1 Large Enemy OR 2 Small Enemies
     if (rdm.nextBoolean()) {
-      // Cas A : 1 Gros Ennemi
-      // PV = difficulté +/- 3
+      // Case A: 1 Large Enemy (HP = base +/- 3)
       int hp = difficultyBase + (rdm.nextInt(7) - 3);
-      hp = Math.max(5, hp); // Sécurité minimum 5 PV
-      int xp = hp / 2;      // XP calculée selon les PV    
+      hp = Math.max(5, hp); // Minimum 5 HP safety
+      int xp = hp / 2;       
       enemies.add(new Ennemi(hp, xp, behavior));
     } else {
-      // Cas B : 2 Petits Ennemis
+      // Case B: 2 Small Enemies (HP = half base +/- 1)
       int hp1 = (difficultyBase / 2) + (rdm.nextInt(3) - 1);
-      int hp2 = (difficultyBase / 2) + (rdm.nextInt(3) - 1);     
+      int hp2 = (difficultyBase / 2) + (rdm.nextInt(3) - 1);      
       hp1 = Math.max(1, hp1);
-      hp2 = Math.max(1, hp2);     
+      hp2 = Math.max(1, hp2);      
       enemies.add(new Ennemi(hp1, hp1 / 2, behavior));
       enemies.add(new Ennemi(hp2, hp2 / 2, behavior));
     }
@@ -78,26 +96,30 @@ public final class DungeonGenerator {
   }
 
   /**
-   * Crée un butin aléatoire en piochant dans la liste Stuff.
+   * Creates a random selection of loot items (1 or 2 items) by picking from the {@link Stuff} enum.
+   *
+   * @return A list of {@link ItemInstance} representing the loot.
    */
   private static List<ItemInstance> createRandomLoot() {
     StuffFactory factory = new StuffFactory();
-    List<ItemInstance> loot = new ArrayList<>();   
-    // On décide combien d'objets (1 ou 2)
-    int nbItems = 1 + rdm.nextInt(2);   
-    // On récupère tous les objets possibles
-    Stuff[] allStuff = Stuff.values();   
+    List<ItemInstance> loot = new ArrayList<>();    
+    // Decide number of items (1 or 2)
+    int nbItems = 1 + rdm.nextInt(2);    
+    // Get all possible items
+    Stuff[] allStuff = Stuff.values();    
     for (int i = 0; i < nbItems; i++) {
-      // Tirage au sort d'un objet
+      // Randomly select an item
       int randomIndex = rdm.nextInt(allStuff.length);
-      Stuff randomStuff = allStuff[randomIndex];  
+      Stuff randomStuff = allStuff[randomIndex];      
       loot.add(new ItemInstance(factory.create(randomStuff)));
     }    
     return loot;
   }
   
   /**
-   * Crée le stock du marchand (3 objets aléatoires).
+   * Creates a stock list for a merchant, generating 3 random items while ensuring no {@link Stuff#Curse} items are included.
+   *
+   * @return A list of {@link ItemInstance} representing the merchant's stock.
    */
   private static List<ItemInstance> createShopStock() {
     StuffFactory factory = new StuffFactory();
@@ -108,7 +130,7 @@ public final class DungeonGenerator {
       if (randomStuff != Stuff.Curse) {
         stock.add(new ItemInstance(factory.create(randomStuff)));
       } else {
-        // On recommence le tirage
+        // Reroll the item if it's a Curse
         i--; 
       }
     }

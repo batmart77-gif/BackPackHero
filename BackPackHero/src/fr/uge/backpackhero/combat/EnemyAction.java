@@ -1,13 +1,16 @@
 package fr.uge.backpackhero.combat;
 
 /**
- * Interface scellée représentant une action ("message") qu'un ennemi annonce.
+ * A sealed interface representing a planned action ("message") that an enemy announces
+ * before executing it.
+ * This is used to display the enemy's intent to the player during the hero's turn.
  */
 public sealed interface EnemyAction permits AttackAction, ProtectAction, CurseAction {
   
   /**
-   * Renvoie une description textuelle de l'action pour l'afficher au joueur.
-   * @return Le texte (ex: "Attaque (5)").
+   * Returns a textual description of the action to display to the player.
+   *
+   * @return The text describing the action (e.g., "Attack (5)" or "Malediction").
    */
   String description();
 }

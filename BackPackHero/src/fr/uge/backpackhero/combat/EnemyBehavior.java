@@ -4,22 +4,25 @@ import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.entites.Heros;
 
 /**
- * Interface définissant l'intelligence (le comportement) d'un ennemi.
+ * Interface defining the intelligence (behavior) of an enemy.
+ * Classes implementing this interface define how a specific enemy type chooses and executes its actions.
  */
 public interface EnemyBehavior {
   
   /**
-   * L'ennemi réfléchit et choisit sa prochaine action.
-   * @return L'objet action (le message) qui sera annoncé.
+   * The enemy thinks and chooses its next action based on its specific logic.
+   * This action is typically announced to the player before execution.
+   *
+   * @return The action object (the message) that will be announced.
    */
   EnemyAction chooseAction();
   
   /**
-   * Exécute l'action qui avait été annoncée précédemment.
+   * Executes the action that had been previously announced.
    *
-   * @param action L'action à exécuter.
-   * @param owner L'ennemi qui exécute l'action 
-   * @param target La cible de l'action
+   * @param action The action to execute.
+   * @param owner  The enemy that executes the action.
+   * @param target The target of the action (usually the Hero).
    */
   void executeAction(EnemyAction action, Ennemi owner, Heros target);
 }

@@ -1,13 +1,19 @@
 package fr.uge.backpackhero.combat;
 
 /**
- * Représente l'intention de se protéger.
- * Stocke le montant de protection gagné.
+ * Represents the intention to gain protection (block).
+ * Stores the amount of protection gained by the enemy.
  *
- * @param amount La quantité de protection (amount = montant).
+ * @param amount The quantity of protection (block) gained.
  */
 public record ProtectAction(int amount) implements EnemyAction {
   
+  /**
+   * Compact constructor to validate that the protection amount is not negative.
+   *
+   * @param amount The quantity of protection.
+   * @throws IllegalArgumentException if the amount is negative.
+   */
   public ProtectAction {
     if (amount < 0) {
       throw new IllegalArgumentException("Le montant (amount) ne peut pas être négatif");

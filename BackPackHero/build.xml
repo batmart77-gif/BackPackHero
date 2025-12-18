@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="BackpackHero" default="compile" basedir=".">
+
+    <!-- Project directories -->
+    <property name="src" location="src"/>
+    <property name="build" location="build"/>
+    <property name="doc" location="javadoc"/>
+    <property name="include" location="include"/>
+    <property name="dist" location="dist"/>
+    <property name="jarfile" location="${dist}/backpackhero.jar"/>
+
+    <!-- Classpath referencing all jars in /include -->
+    <path id="classpath">
+        <fileset dir="${include}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- Clean -->
+    <target name="clean">
+        <delete dir="${build}"/>
+        <delete dir="${doc}"/>
+        <delete dir="${dist}"/>
+    </target>
+
+    <!-- Compile -->
+    <target name="compile">
+        <mkdir dir="${build}"/>
+        <javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+            <classpath refid="classpath"/>
+        </javac>
+    </target>
+
+    <!-- Generate Javadoc -->
+    <target name="javadoc">
+        <mkdir dir="${doc}"/>
+        <javadoc 
+            destdir="${doc}"
+            sourcepath="${src}"
+            packagenames="fr.uge.backpackhero.*"
+            author="true"
+            version="true"
+            windowtitle="Backpack Hero API Docs"
+        >
+            <classpath refid="classpath"/>
+        </javadoc>
+    </target>
+
+    <!-- Create JAR -->
+    <target name="jar" depends="compile">
+        <mkdir dir="${dist}"/>
+        <jar destfile="${jarfile}" basedir="${build}">
+            <manifest>
+                <attribute name="Main-Class" value="fr.uge.backpackhero.Main"/>
+                <attribute name="Class-Path" value="include/zen-6.0.jar"/>
+            </manifest>
+        </jar>
+    </target>
+
+</project>

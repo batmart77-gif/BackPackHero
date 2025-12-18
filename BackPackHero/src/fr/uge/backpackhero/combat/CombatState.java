@@ -1,17 +1,22 @@
 package fr.uge.backpackhero.combat;
 
 /**
- * Représente les différents états possibles d'un combat.
- * Utilisé pour savoir si le jeu doit continuer ou s'arrêter.
+ * Represents the different possible states of a combat.
+ * Used to determine if the game should continue or stop.
  */
 public enum CombatState { 
-  /** Le combat est toujours en cours. */
+  /**
+   * The combat is still in progress.
+   */
   IN_PROGRESS, 
   
-  /** Le héros a gagné (tous les ennemis sont morts). */
+  /**
+   * The hero has won (all enemies are dead).
+   */
   WIN, 
   
-  /** Le héros a perdu (0 PV). */
+  /**
+   * The hero has lost (0 HP).
+   */
   LOSS 
 }
-

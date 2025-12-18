@@ -1,5 +1,6 @@
 package fr.uge.backpackhero.item;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import fr.uge.backpackhero.entites.Ennemi;
@@ -73,6 +74,43 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
   default boolean rotatable() {
       return true;
   }
+  
+  /**
+   * Calculates the rotated shape of the item according to the rotation angle.
+   *
+   * @param originalShape the original shape of the item
+   * @param angle the rotation angle in degrees
+   * @return a list of positions representing the rotated shape
+   */
+  default List<Position> shapeAtRotation(int rotation) {
+	    var shape = pos();
+	    int times = (rotation % 360) / 90;
+
+	    for (int i = 0; i < times; i++) {
+	        shape = rotate90(shape);
+	    }
+	    return shape;
+	}
+  
+  /**
+   * Rotates the shape 90 degrees clockwise and normalizes it to start at (0,0).
+   *
+   * @param shape the original shape
+   * @return the rotated and normalized shape
+   */
+  private List<Position> rotate90(List<Position> shape) {
+	    var rotated = new ArrayList<Position>();
+	    for (var p : shape) {
+	        rotated.add(new Position(p.column(), -p.row()));
+	    }
+
+	    int minR = rotated.stream().mapToInt(Position::row).min().orElse(0);
+	    int minC = rotated.stream().mapToInt(Position::column).min().orElse(0);
+
+	    return rotated.stream()
+	        .map(p -> new Position(p.row() - minR, p.column() - minC))
+	        .toList();
+	}
 }
 
 

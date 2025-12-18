@@ -2,24 +2,39 @@ package fr.uge.backpackhero.combat;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Objects;
+import java.util.Objects; 
 
 import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.item.ItemInstance;
 
 /**
- * Classe de gestion d'un combat.
- * Gère le tour par tour et les conditions de victoire/défaite.
+ * Manages the combat logic between the hero and a group of enemies.
+ * It handles the turn-based system, status effects, and victory/defeat conditions.
  */
 public final class Combat {
   
+  /** The hero involved in the combat. */
   private final Heros heros;
+  
+  /** The list of enemies currently alive in the combat. */
   private final List<Ennemi> enemies;
+  
+  /** Flag indicating if it is currently the hero's turn. */
   private boolean isHeroTurn;
+  
+  /** Delegate used to handle special interactions like Curses during combat. */
   private final CombatInteractionDelegate delegate;
 
-
+  /**
+   * Creates a new Combat instance.
+   *
+   * @param heros       The hero player.
+   * @param listEnemies The list of enemies to fight.
+   * @param delegate    The delegate to handle UI or specific interactions (e.g., Curses).
+   * @throws NullPointerException if any argument is null.
+   * @throws IllegalArgumentException if the list of enemies is empty.
+   */
   public Combat(Heros heros, List<Ennemi> listEnemies, CombatInteractionDelegate delegate) {
     Objects.requireNonNull(heros);
     Objects.requireNonNull(listEnemies);
@@ -27,37 +42,30 @@ public final class Combat {
     
     if (listEnemies.isEmpty()) {
       throw new IllegalArgumentException("Pas d'ennemis dans le combat");
-    }
-    
+    }   
     this.heros = heros;
     this.enemies = new ArrayList<>(listEnemies); 
     this.delegate = delegate;
-
-    // Le combat commence par le tour du héros
+    // Immediately start the first turn
     startHeroTurn();
   }
-  
-
 
   /**
-   * Prépare et démarre le tour du héros.
-   * Réinitialise l'énergie et demande aux ennemis d'annoncer leurs intentions.
+   * Prepares and starts the hero's turn.
+   * It triggers start-of-turn effects, resets energy, and makes enemies plan their next move.
    */
   public void startHeroTurn() {
     this.isHeroTurn = true;
-    
-    // 1. Effets de début de tour (Regen, Burn)
+    // 1. Trigger hero's start-of-turn effects (e.g., Regeneration)
     heros.triggerStartTurnEffects();
     if (!heros.estVivant()) return;
-
-    // 2. Fin des effets du tour précédent pour les ennemis (Poison, Dégradation)
-    // C'est logique : le tour de l'ennemi vient de finir techniquement.
+    // 2. Trigger enemies' end-of-turn effects (e.g., Poison damage from previous turn)
     for (Ennemi e : enemies) {
         if (e.estVivant()) e.triggerEndTurnEffects();
-    }
-    heros.debuterTourCombat();
-    
-    // Les ennemis choisissent leur action pour le tour à venir
+    }   
+    // Reset hero's energy and shield
+    heros.debuterTourCombat();   
+    // 3. Enemies plan their next action (intentions)
     for (Ennemi enemy : enemies) {
       if (enemy.estVivant()) {
         enemy.choisirProchaineAction();
@@ -66,15 +74,14 @@ public final class Combat {
   }
 
   /**
-   * Tente d'exécuter une action du joueur (utiliser un objet du sac).
+   * Tries to execute a player action using an item from the backpack.
    *
-   * @param instance L'instance de l'objet dans le sac (ItemInstance).
-   * @param target La cible (Ennemi).
-   * @return true si l'action a réussi, false sinon.
+   * @param instance The item instance from the backpack to use.
+   * @param target   The target enemy (can be null for non-targeted items).
+   * @return {@code true} if the action was successful, {@code false} otherwise.
    */
   public boolean tryHeroAction(ItemInstance instance, Ennemi target) {
-    Objects.requireNonNull(instance);
-    
+    Objects.requireNonNull(instance);  
     if (!isHeroTurn) {
       System.out.println("Ce n'est pas votre tour !");
       return false;
@@ -82,37 +89,34 @@ public final class Combat {
     if (!heros.estVivant()) {
       return false;
     }
-
-    //On récupère l'Item de base et on l'utilise.
-    // Cela suppose que l'interface Item a une méthode: use(Heros, Ennemi)
+    // Use the item via its interface logic
     boolean success = instance.getItem().use(heros, target);
-
-    // Si l'action a réussi et a tué un ennemi, on le retire de la liste
+    // If the action killed an enemy, grant XP and remove it
     if (success && target != null && !target.estVivant()) {
       heros.gainXp(target.getxpReward());
       enemies.remove(target);
-    }
-    
+    } 
     return success;
   }
 
   /**
-   * Termine le tour du héros et lance le tour des ennemis.
+   * Ends the hero's turn and executes the enemies' turn.
+   * Enemies perform their planned actions or inflict curses.
    */
   public void startEnemyTurn() {
     if (!isHeroTurn) return;
     this.isHeroTurn = false;
+    // 1. Hero suffers end-of-turn effects (e.g., Poison)
     heros.triggerEndTurnEffects(); 
     if (!heros.estVivant()) return;
+    // 2. Enemies act
     for (Ennemi enemy : enemies) {
       if (enemy.estVivant()) {
-        EnemyAction action = enemy.getActionAnnoncee();
-        if (action instanceof CurseAction curseAct) {
-              delegate.handleForcedCurse(heros, curseAct.curse()); 
-              enemy.clearActionAnnoncee();
-          } else {
-              enemy.executerAction(heros); 
-          }
+        EnemyAction action = enemy.getActionAnnoncee();   
+        switch(action) {
+        case CurseAction curseAct -> delegate.handleForcedCurse(heros, curseAct.curse());
+        default -> enemy.executerAction(heros);
+        }
         enemy.triggerStartTurnEffects();
       }
     }
@@ -126,20 +130,20 @@ public final class Combat {
   }
   
   /**
-   * Gère la fin du combat, quel que soit le résultat.
-   * Inclut la décrémentation des pénalités temporaires.
+   * Handles the end of the combat session.
+   * Removes temporary penalties (like SLOW from curses) and grants bonus XP on victory.
    */
   public void endCombat() {
-    heros.decrementCursePenaltyDuration();
+    heros.decrementCursePenaltyDuration(); 
     if (getState() == CombatState.WIN) {
-      heros.gainXp(10);
+      heros.gainXp(10); // Bonus XP for clearing the room
     }
-      
   }
   
   /**
-   * Récupère l'état actuel du combat (En cours, Victoire, Défaite).
-   * @return L'enum CombatState.
+   * Returns the current state of the combat.
+   *
+   * @return {@code LOSS} if hero is dead, {@code WIN} if enemies are empty, {@code IN_PROGRESS} otherwise.
    */
   public CombatState getState() {
     if (!heros.estVivant()) return CombatState.LOSS;
@@ -147,18 +151,29 @@ public final class Combat {
     return CombatState.IN_PROGRESS;
   }
   
-  
+  // --- Getters ---
+
+  /**
+   * Gets the hero involved in this combat.
+   * @return The hero.
+   */
   public Heros getHero() { 
     return heros; 
   }
   
+  /**
+   * Gets a list of currently alive enemies.
+   * @return An unmodifiable list of enemies.
+   */
   public List<Ennemi> getAliveEnemies() { 
     return List.copyOf(enemies); 
   }
   
+  /**
+   * Checks if it is the hero's turn.
+   * @return {@code true} if it is the hero's turn.
+   */
   public boolean isHeroTurn() { 
     return isHeroTurn; 
   }
-  
-  
 }
