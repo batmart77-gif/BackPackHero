@@ -46,7 +46,7 @@ public class MenuMarchand {
   private static void afficherInterfaceGlobale(Heros heros, MerchantRoom shop) {
     System.out.println("\n--- BOUTIQUE --- (Solde: " + heros.getGold() + " Or)");
     System.out.println("VOTRE SAC :");
-    View.printBackPack(heros.getBackpack());
+    new View(heros.getBackpack(), null, heros).printBackPack();
     afficherStock(shop.stock());
     afficherActions();
   }
@@ -87,24 +87,25 @@ public class MenuMarchand {
    * @param sc      The scanner for further input if needed.
    * @return {@code true} if the shopping session should continue, {@code false} if the user wants to quit.
    */
-  private static boolean traiterCommandePrincipale(String input, Heros heros, MerchantRoom shop, Scanner sc) {
-    if (input.equals("Q")) return false;
-    
-    if (input.equals("V")) {
-      menuVente(heros, sc);
-      return true;
-    }
-    
-    try {
-      int index = Integer.parseInt(input);
-      verifierEtLancerAchat(heros, shop, index, sc);
-    } catch (NumberFormatException e) {
-      System.out.println("Commande invalide.");
-    }
-    return true;
-  }
+  private static boolean traiterCommandePrincipale(String input, Heros heros, MerchantRoom shop, Scanner scanner) {
 
-  // --- LOGIQUE ACHAT ---
+	    if (input.equals("Q")) {
+	      return false;
+	    }
+
+	    if (input.equals("V")) {
+	      menuVente(heros, scanner);
+	      return true;
+	    }
+
+	    if (isInteger(input)) {
+	      verifierEtLancerAchat(heros, shop, Integer.parseInt(input), scanner);
+	      return true;
+	    }
+
+	    System.out.println("Invalid command.");
+	    return true;
+	  }
 
   /**
    * Verifies if the purchase is possible (valid index, enough gold) and proceeds to the next step.
@@ -120,41 +121,21 @@ public class MenuMarchand {
       return;
     }
     ItemInstance item = shop.stock().get(index);
-    if (heros.getGold() < item.getItem().price()) {
+    int price = item.getItem().price();
+    if (heros.getGold() < price) {
       System.out.println("Pas assez d'or !");
       return;
     }
-    finaliserAchat(heros, shop, item, index, sc);
-  }
-
-  /**
-   * Finalizes the purchase by asking for placement coordinates and deducting gold.
-   *
-   * @param heros The hero buying the item.
-   * @param shop  The shop.
-   * @param item  The item being bought.
-   * @param index The index of the item in the shop's stock.
-   * @param sc    The scanner for coordinates input.
-   */
-  private static void finaliserAchat(Heros heros, MerchantRoom shop, ItemInstance item, int index, Scanner sc) {
-    System.out.println("Placer " + item.getName() + " : Ligne Colonne ? > ");
-    try {
-      int r = sc.nextInt();
-      int c = sc.nextInt();
-      if (heros.getBackpack().add(item, new Position(r, c))) {
-        heros.payer(item.getItem().price());
-        shop.stock().remove(index);
-        System.out.println("Achat confirmé !");
-      } else {
-        System.out.println("Pas de place ici.");
-      }
-    } catch (Exception e) {
-      System.out.println("Erreur de saisie.");
-      sc.nextLine(); // Vider buffer
+    Position pos = lirePosition(sc, heros);
+    if (heros.getBackpack().add(item, pos)) {
+      heros.payer(price);
+      shop.stock().remove(index);
+      System.out.println("Purchase successful!");
+    } else {
+      System.out.println("Cannot place item here.");
     }
   }
 
-  // --- LOGIQUE VENTE ---
 
   /**
    * Displays and handles the selling menu.
@@ -168,12 +149,12 @@ public class MenuMarchand {
     
     if (input.equalsIgnoreCase("X")) return;
 
-    try {
-      int idx = Integer.parseInt(input);
-      effectuerVente(heros, idx);
-    } catch (Exception e) { 
-      System.out.println("Erreur."); 
-    }
+    if (!isInteger(input)) {
+        System.out.println("Invalid input.");
+        return;
+      }
+
+      effectuerVente(heros, Integer.parseInt(input));
   }
 
   /**
@@ -183,7 +164,7 @@ public class MenuMarchand {
    */
   private static void afficherListeVente(Heros heros) {
     System.out.println("\n-- VENTE -- (X pour Annuler)");
-    View.printBackPack(heros.getBackpack()); 
+    new View(heros.getBackpack(), null, heros).printBackPack(); 
     var items = heros.getBackpack().getItems();
     for (int i = 0; i < items.size(); i++) {
       int prixVente = items.get(i).getItem().price() / 2;
@@ -210,4 +191,42 @@ public class MenuMarchand {
       System.out.println("Numéro invalide.");
     }
   }
+  
+  /**
+   * Reads and validates a position entered by the user from the console.
+   *
+   * @param scanner the scanner used to read user input
+   * @param heros the hero whose backpack bounds are used for validation
+   * @return a valid {@code Position} if the input is correct and within bounds,
+   *         or {@code null} if the input is invalid
+   * @throws NullPointerException if {@code scanner} or {@code heros} is {@code null}
+   */
+  private static Position lirePosition(Scanner scanner, Heros heros) {
+	    System.out.println("Enter position (row col):");
+	    System.out.print("> ");
+	    String[] parts = scanner.nextLine().trim().split("\\s+");
+	    if (parts.length != 2 || !isInteger(parts[0]) || !isInteger(parts[1])) {
+	      System.out.println("Invalid coordinates.");
+	      return null;
+	    }
+	    int row = Integer.parseInt(parts[0]);
+	    int col = Integer.parseInt(parts[1]);
+	    if (!heros.getBackpack().isInside(new Position(row, col))) {
+	      System.out.println("Position out of bounds.");
+	      return null;
+	    }
+	    return new Position(row, col);
+	  }
+
+  /**
+   * Checks whether the given string represents a non-negative integer.
+   *
+   * @param s the string to test
+   * @return {@code true} if the string represents a non-negative integer,
+   *         {@code false} otherwise
+   * @throws NullPointerException if {@code s} is {@code null}
+   */
+  private static boolean isInteger(String s) {
+	    return s.matches("\\d+");
+	  }
 }

@@ -212,7 +212,7 @@ public class Main {
           + e.choisirProchaineAction().description());
     }
     System.out.println("VOTRE SAC :"); 
-    View.printBackPack(heros.getBackpack());   
+    new View(heros.getBackpack(), null, heros).printBackPack();   
     List<ItemInstance> objets = heros.getBackpack().getItems();
     if (objets.isEmpty()) {
       System.out.println("  (Sac vide !)");

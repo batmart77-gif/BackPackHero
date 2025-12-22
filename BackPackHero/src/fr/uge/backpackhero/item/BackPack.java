@@ -115,7 +115,7 @@ public class BackPack {
     return true;
   }
   
-  private boolean isInside(Position pos) {
+  public boolean isInside(Position pos) {
       return pos.row() >= 0 && pos.row() < this.row &&
              pos.column() >= 0 && pos.column() < this.column;
   }
