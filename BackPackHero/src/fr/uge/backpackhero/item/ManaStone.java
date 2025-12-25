@@ -71,4 +71,9 @@ public record ManaStone(String name, List<Position> pos, Rarity rarity, int stat
     System.out.println(heros + " uses " + name + ".");
     return true;
   }
+	
+	@Override
+	public boolean isManaStone() { 
+	  return true; 
+	}
 }

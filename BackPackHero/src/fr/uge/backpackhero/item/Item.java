@@ -98,7 +98,7 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
    * @param shape the original shape
    * @return the rotated and normalized shape
    */
-  private List<Position> rotate90(List<Position> shape) {
+   private List<Position> rotate90(List<Position> shape) {
 	    var rotated = new ArrayList<Position>();
 	    for (var p : shape) {
 	        rotated.add(new Position(p.column(), -p.row()));
@@ -110,7 +110,18 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
 	    return rotated.stream()
 	        .map(p -> new Position(p.row() - minR, p.column() - minC))
 	        .toList();
-	}
+	 }
+  
+   default boolean isManaStone() { return false; }
+   
+   /**
+    * @param instance L'instance actuelle de l'objet (pour connaître sa position).
+    */
+   //boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance);
+
+   // Prédicats pour éviter instanceof
+   default boolean isArmor() { return false; }
+   default boolean isHeartGem() { return false; }
 }
 
 

@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import fr.uge.backpackhero.combat.BeeQueenBehavior;
 import fr.uge.backpackhero.combat.EnemyBehavior;
+import fr.uge.backpackhero.combat.FrogWizardBehavior;
+import fr.uge.backpackhero.combat.LivingShadowBehavior;
 import fr.uge.backpackhero.combat.RatLoupBehavior;
 import fr.uge.backpackhero.entites.Ennemi;
 
@@ -67,33 +70,31 @@ public final class DungeonGenerator {
     return new Floor(map, 0, row);
   }
   
-  /**
-   * Generates a list of enemies for a room, balancing between one large enemy (50%) or two smaller enemies (50%).
-   *
-   * @param difficultyBase The base HP value used for scaling enemy difficulty.
-   * @return A list containing one or two {@link Ennemi} instances with {@link RatLoupBehavior}.
-   */
+  
+  private static Ennemi generateRandomEnemyType() {
+    int type = rdm.nextInt(5);
+    return switch (type) {
+        case 0 -> new Ennemi(32, 6, new RatLoupBehavior(7, 9, 14, 14)); // Petit Rat-loup
+        case 1 -> new Ennemi(45, 6, new RatLoupBehavior(7, 9, 13, 16)); // Ratwolf
+        case 2 -> new Ennemi(45, 8, new FrogWizardBehavior());         // Sorcier-grenouille
+        case 3 -> new Ennemi(50, 25, new LivingShadowBehavior());      // Ombre vivante
+        default -> new Ennemi(74, 20, new BeeQueenBehavior());         // Reine des abeilles
+    };
+  }
+  
   private static List<Ennemi> createRandomEnemies(int difficultyBase) {
-    EnemyBehavior behavior = new RatLoupBehavior();
     List<Ennemi> enemies = new ArrayList<>();
-    // 50% chance: 1 Large Enemy OR 2 Small Enemies
-    if (rdm.nextBoolean()) {
-      // Case A: 1 Large Enemy (HP = base +/- 3)
-      int hp = difficultyBase + (rdm.nextInt(7) - 3);
-      hp = Math.max(5, hp); // Minimum 5 HP safety
-      int xp = hp / 2;       
-      enemies.add(new Ennemi(hp, xp, behavior));
-    } else {
-      // Case B: 2 Small Enemies (HP = half base +/- 1)
-      int hp1 = (difficultyBase / 2) + (rdm.nextInt(3) - 1);
-      int hp2 = (difficultyBase / 2) + (rdm.nextInt(3) - 1);      
-      hp1 = Math.max(1, hp1);
-      hp2 = Math.max(1, hp2);      
-      enemies.add(new Ennemi(hp1, hp1 / 2, behavior));
-      enemies.add(new Ennemi(hp2, hp2 / 2, behavior));
+    int count = (difficultyBase > 5 && rdm.nextBoolean()) ? 2 : 1; 
+    
+    for (int i = 0; i < count; i++) {
+        enemies.add(generateRandomEnemyType());
+    }
+    
+    if (difficultyBase > 10 && enemies.size() == 1) {
+        return List.of(new Ennemi(74, 20, new BeeQueenBehavior()));
     }
     return enemies;
-  }
+}
 
   /**
    * Creates a random selection of loot items (1 or 2 items) by picking from the {@link Stuff} enum.

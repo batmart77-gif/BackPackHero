@@ -5,7 +5,7 @@ package fr.uge.backpackhero.combat;
  * before executing it.
  * This is used to display the enemy's intent to the player during the hero's turn.
  */
-public sealed interface EnemyAction permits AttackAction, ProtectAction, CurseAction {
+public sealed interface EnemyAction permits AttackAction, ProtectAction, CurseAction, StatusEffectAction {
   
   /**
    * Returns a textual description of the action to display to the player.

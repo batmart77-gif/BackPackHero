@@ -4,6 +4,7 @@ import fr.uge.backpackhero.item.Position;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 
 import fr.uge.backpackhero.combat.Effect;
@@ -48,6 +49,9 @@ public final class Heros {
   /** Damage inflicted when refusing a curse, increases per refusal. */
   private int currentCurseRefusalDamage = 0;
 
+  private int mana;
+  private int maxMana;
+  
   /**
    * Constructs a new Hero with base starting statistics (40 HP, 3 Energy, Lvl 1).
    */
@@ -210,11 +214,13 @@ public final class Heros {
    * @param effect The status effect to add.
    * @param amount The number of stacks to add.
    */
-  public void addStatus(Effect effect, int amount) {
+  public void addEffect(Effect effect, int amount) {
+    Objects.requireNonNull(effect);
     statusEffects.merge(effect, amount, Integer::sum);
     System.out.println("Effet appliqué : " + effect.getNom() + " (Cumul: " + getStatus(effect) + ")");
   }
 
+   
   /**
    * Retrieves the current stack count (X value) of a specific status effect.
    *
@@ -281,15 +287,16 @@ public final class Heros {
    * Handles {@link Effect#POISON} and the general degradation of status stacks.
    */
   public void triggerEndTurnEffects() {
-      // 1. Poison (Ignores armor!)
-      int poison = getStatus(Effect.POISON);
-      if (poison > 0) {
-          System.out.println("Poison : -" + poison + " PV (Ignore l'armure)");
-          this.hp = Math.max(0, this.hp - poison); // Direct HP damage
-      }
-      // 2. Degradation of effects (-1 stack everywhere at the end of the turn)
-      statusEffects.replaceAll((e, v) -> v - 1);
-      statusEffects.values().removeIf(v -> v <= 0);
+    // 1. Gestion du Poison (Dégâts directs aux PV)
+    int poison = getStatus(Effect.POISON);
+    if (poison > 0) {
+        System.out.println("Le Poison ronge le héros : -" + poison + " PV");
+        this.hp = Math.max(0, this.hp - poison);
+    }
+    
+    // 2. Dégradation naturelle : -1 stack pour tous les effets à chaque fin de tour
+    statusEffects.replaceAll((e, v) -> v - 1);
+    statusEffects.values().removeIf(v -> v <= 0);
   }
 
   /**
@@ -424,4 +431,32 @@ public final class Heros {
       }
     }
   }
+  
+  /**
+   * Recalcule le mana maximum en comptant les pierres de mana dans le sac
+   * et réinitialise le mana actuel.
+   */
+  public void rafraichirMana() {
+    // On demande au sac de compter les pierres (logique déléguée)
+    this.maxMana = backpack.countManaStones(); 
+    this.mana = maxMana;
+    System.out.println("Mana réinitialisé : " + mana + "/" + maxMana);
+  }
+
+  /**
+   * Tente de dépenser du mana pour un objet magique.
+   * @param cost Coût en mana.
+   * @return true si le mana a été débité.
+   */
+  public boolean depenserMana(int cost) {
+    if (cost < 0) throw new IllegalArgumentException("Coût négatif");
+    if (this.mana >= cost) {
+      this.mana -= cost;
+      return true;
+    }
+    System.out.println("Pas assez de mana !");
+    return false;
+  }
+
+  public int getMana() { return mana; }
 }

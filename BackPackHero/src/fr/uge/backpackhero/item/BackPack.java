@@ -261,5 +261,40 @@ public class BackPack {
   public int getColumns() {
     return column;
   }
+  
+  /**
+   * Compte le nombre de pierres de mana présentes dans le sac.
+   * Cette méthode respecte la règle : 1 pierre = 1 case.
+   */
+  public int countManaStones() {
+    return (int) this.backpack.keySet().stream()
+          .map(ItemInstance::getItem)
+          .filter(Item::isManaStone)
+          .count();
+  }
+  
+  /**
+   * Vérifie si l'instance donnée touche un objet répondant au critère.
+   * Deux objets sont adjacents si au moins une de leurs cases est côte à côte (distance de 1).
+   */
+  public boolean hasAdjacentItem(ItemInstance self, java.util.function.Predicate<Item> criteria) {
+      var myPositions = backpack.get(self); // List<Position>
+      
+      return backpack.entrySet().stream()
+          .filter(entry -> !entry.getKey().equals(self)) // Ne pas se comparer à soi-même
+          .filter(entry -> criteria.test(entry.getKey().getItem()))
+          .anyMatch(entry -> areAdjacent(myPositions, entry.getValue()));
+  }
+
+  private boolean areAdjacent(List<Position> posA, List<Position> posB) {
+      for (var pA : posA) {
+          for (var pB : posB) {
+              // Distance de Manhattan = 1 (Haut, Bas, Gauche, Droite)
+              int dist = Math.abs(pA.row() - pB.row()) + Math.abs(pA.column() - pB.column());
+              if (dist == 1) return true;
+          }
+      }
+      return false;
+  }
 
 }

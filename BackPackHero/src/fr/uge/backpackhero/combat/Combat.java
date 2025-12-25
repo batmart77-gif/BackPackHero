@@ -56,20 +56,15 @@ public final class Combat {
    */
   public void startHeroTurn() {
     this.isHeroTurn = true;
-    // 1. Trigger hero's start-of-turn effects (e.g., Regeneration)
     heros.triggerStartTurnEffects();
     if (!heros.estVivant()) return;
-    // 2. Trigger enemies' end-of-turn effects (e.g., Poison damage from previous turn)
-    for (Ennemi e : enemies) {
-        if (e.estVivant()) e.triggerEndTurnEffects();
-    }   
-    // Reset hero's energy and shield
+    
+    // Recharge de l'énergie ET du Mana
     heros.debuterTourCombat();   
-    // 3. Enemies plan their next action (intentions)
+    heros.rafraichirMana(); 
+    
     for (Ennemi enemy : enemies) {
-      if (enemy.estVivant()) {
-        enemy.choisirProchaineAction();
-      }
+      if (enemy.estVivant()) enemy.choisirProchaineAction();
     }
   }
 
