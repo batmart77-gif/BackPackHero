@@ -60,20 +60,10 @@ public record Arrow(String name, List<Position> pos, Rarity rarity, int stats, i
 		};
 	}
 	
-	/**
-     * Attempts to use the arrow in combat.
-     *
-     * @param hero the hero using the item
-     * @param target the enemy to target (can be null)
-     * @return true if the item was successfully used, false otherwise
-     */
 	@Override
-  public boolean use(Heros heros, Ennemi target) {
-    Objects.requireNonNull(heros);
-    if (target == null || !target.estVivant()) return false;
-    target.recevoirDegats(stats);
-    System.out.println(heros + " shoots " + name + " (" + stats + " damage) !");
-    return true;
-  }
+	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
+	  Objects.requireNonNull(heros);
+	  return false; 
+	}
 	
 }

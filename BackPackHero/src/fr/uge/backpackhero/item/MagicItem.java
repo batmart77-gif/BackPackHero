@@ -57,23 +57,16 @@ public record MagicItem(String name, List<Position> pos, Rarity rarity, int stat
 		};
 	}
 	
-	/**
-     * Attempts to use the magic item in combat.
-     *
-     * @param hero the hero using the item
-     * @param target the enemy to target (can be null)
-     * @return true if the item was successfully used, false otherwise
-     */
 	@Override
-  public boolean use(Heros heros, Ennemi target) {
+  public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
     Objects.requireNonNull(heros);
     if (target == null || !target.estVivant()) return false;
 
-    if (heros.depenserEnergie(cost)) {
-    	target.recevoirDegats(stats);
-      System.out.println(heros + " casts a spell with " + name + " (" + stats + " damage) !");
+    // Consomme l'énergie ET vérifie le Mana
+    if (heros.depenserEnergie(cost) && heros.depenserMana(1)) {
+      target.recevoirDegats(stats);
       return true;
     }
     return false;
-	}
+  }
 }

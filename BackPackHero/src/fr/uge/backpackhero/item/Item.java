@@ -17,8 +17,9 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
    *
    * @return the item's price (must be non-negative)
    */
-  public abstract int price();
   
+   public abstract int price();
+   
   /**
    * Returns a short string representation used for compact display
    * (e.g., in the backpack grid).
@@ -64,7 +65,7 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
    * @param target the targeted enemy (may be {@code null} for defensive items)
    * @return {@code true} if the item was successfully used, {@code false} otherwise
    */
-  boolean use(Heros heros, Ennemi target);
+  //boolean use(Heros heros, Ennemi target);
   
   /**
    * Indicates whether this item can be rotated in the backpack.
@@ -83,14 +84,14 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
    * @return a list of positions representing the rotated shape
    */
   default List<Position> shapeAtRotation(int rotation) {
-	    var shape = pos();
-	    int times = (rotation % 360) / 90;
+      var shape = pos();
+      int times = (rotation % 360) / 90;
 
-	    for (int i = 0; i < times; i++) {
-	        shape = rotate90(shape);
-	    }
-	    return shape;
-	}
+      for (int i = 0; i < times; i++) {
+          shape = rotate90(shape);
+      }
+      return shape;
+  }
   
   /**
    * Rotates the shape 90 degrees clockwise and normalizes it to start at (0,0).
@@ -99,29 +100,33 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
    * @return the rotated and normalized shape
    */
    private List<Position> rotate90(List<Position> shape) {
-	    var rotated = new ArrayList<Position>();
-	    for (var p : shape) {
-	        rotated.add(new Position(p.column(), -p.row()));
-	    }
+      var rotated = new ArrayList<Position>();
+      for (var p : shape) {
+          rotated.add(new Position(p.column(), -p.row()));
+      }
 
-	    int minR = rotated.stream().mapToInt(Position::row).min().orElse(0);
-	    int minC = rotated.stream().mapToInt(Position::column).min().orElse(0);
+      int minR = rotated.stream().mapToInt(Position::row).min().orElse(0);
+      int minC = rotated.stream().mapToInt(Position::column).min().orElse(0);
 
-	    return rotated.stream()
-	        .map(p -> new Position(p.row() - minR, p.column() - minC))
-	        .toList();
-	 }
+      return rotated.stream()
+          .map(p -> new Position(p.row() - minR, p.column() - minC))
+          .toList();
+   }
   
    default boolean isManaStone() { return false; }
    
    /**
     * @param instance L'instance actuelle de l'objet (pour connaître sa position).
     */
-   //boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance);
+   boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance);
 
    // Prédicats pour éviter instanceof
-   default boolean isArmor() { return false; }
-   default boolean isHeartGem() { return false; }
+   default boolean isArmor() { 
+     return false; 
+     }
+   default boolean isHeartGem() {
+     return false; 
+   }
 }
 
 

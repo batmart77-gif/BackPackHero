@@ -63,8 +63,9 @@ public record Curse(List<Position> pos) implements Item {
      * @return always {@code false}
      */
 	@Override
-	public boolean use(Heros heros, Ennemi target) {
-		return false;
+	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
+	  Objects.requireNonNull(heros);
+	  return false; 
 	}
 	
 	/**

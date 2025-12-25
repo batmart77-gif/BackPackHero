@@ -7,6 +7,7 @@ import java.util.Objects;
 import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.item.ItemInstance;
+import fr.uge.backpackhero.item.StuffFactory;
 
 /**
  * Manages the combat logic between the hero and a group of enemies.
@@ -84,8 +85,7 @@ public final class Combat {
     if (!heros.estVivant()) {
       return false;
     }
-    // Use the item via its interface logic
-    boolean success = instance.getItem().use(heros, target);
+    boolean success = instance.getItem().use(heros, target, heros.getBackpack(), instance);
     // If the action killed an enemy, grant XP and remove it
     if (success && target != null && !target.estVivant()) {
       heros.gainXp(target.getxpReward());
@@ -170,5 +170,33 @@ public final class Combat {
    */
   public boolean isHeroTurn() { 
     return isHeroTurn; 
+  }
+  
+  /**
+   * Génère une liste de 2 à 3 objets aléatoires pour le héros.
+   * Respecte les probabilités de rareté définies dans StuffFactory.
+   */
+  private List<ItemInstance> generateRewards() {
+      var factory = new StuffFactory();
+      var rewards = new ArrayList<ItemInstance>();
+      int count = 2 + new java.util.Random().nextInt(2); // 2 ou 3 items
+      
+      for (int i = 0; i < count; i++) {
+          rewards.add(new ItemInstance(factory.randomItem()));
+      }
+      return rewards;
+  }
+
+  /**
+   * Gère la fin du combat.
+   * @return La liste des trésors gagnés si le héros a gagné
+   */
+  public List<ItemInstance> finishCombat() {
+    heros.decrementCursePenaltyDuration(); 
+    if (getState() == CombatState.WIN) {
+      heros.gainXp(10); // Bonus XP de victoire
+      return generateRewards();
+    }
+    return List.of();
   }
 }

@@ -1,6 +1,8 @@
 package fr.uge.backpackhero.item;
 
 import java.util.List;
+import java.util.Objects;
+
 import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.entites.Heros;
 
@@ -76,8 +78,9 @@ public record Gold() implements Item {
      *
      * @return always {@code false}
      */
-	@Override
-	public boolean use(Heros heros, Ennemi target) {
-		return false; 
-	}
+    @Override
+    public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
+      Objects.requireNonNull(heros);
+      return false; 
+    }
 }

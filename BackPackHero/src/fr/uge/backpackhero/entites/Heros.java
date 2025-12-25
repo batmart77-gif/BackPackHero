@@ -11,6 +11,7 @@ import fr.uge.backpackhero.combat.Effect;
 import fr.uge.backpackhero.item.Armor;
 import fr.uge.backpackhero.item.BackPack;
 import fr.uge.backpackhero.item.Curse;
+import fr.uge.backpackhero.item.Item;
 import fr.uge.backpackhero.item.ItemInstance;
 
 /**
@@ -94,18 +95,14 @@ public final class Heros {
    */
   public void recevoirDegats(int damage) {
     if (damage < 0) throw new IllegalArgumentException("Dégâts négatifs interdits");
-    
-    // Handle DODGE (Evasion)
     int dodge = getStatus(Effect.DODGE);
     if (dodge > 0) {
         System.out.println("ESQUIVE ! (" + (dodge - 1) + " charges restantes)");
-        return; // 0 damage taken
+        return;
     }
-    
     int absorbed = Math.min(damage, this.protection);
     this.protection -= absorbed;
     damage -= absorbed;
-
     if (damage > 0) {
       this.hp = Math.max(0, this.hp - damage);
     }
@@ -440,7 +437,6 @@ public final class Heros {
     // On demande au sac de compter les pierres (logique déléguée)
     this.maxMana = backpack.countManaStones(); 
     this.mana = maxMana;
-    System.out.println("Mana réinitialisé : " + mana + "/" + maxMana);
   }
 
   /**
@@ -454,9 +450,20 @@ public final class Heros {
       this.mana -= cost;
       return true;
     }
-    System.out.println("Pas assez de mana !");
     return false;
   }
 
   public int getMana() { return mana; }
+  
+  /**
+   * Calcule le score final du héros selon la recette de la Phase 3.
+   * @return le score total calculé.
+   */
+  public int calculateFinalScore() {
+    int inventoryValue = backpack.getItems().stream()
+              .map(ItemInstance::getItem)
+              .mapToInt(Item::price)
+              .sum();
+    return this.maxHp + inventoryValue;
+  }
 }

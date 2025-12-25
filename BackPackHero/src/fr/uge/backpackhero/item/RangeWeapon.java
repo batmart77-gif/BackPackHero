@@ -58,25 +58,24 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
 		};
 	}
 	
-	/**
-     * Attempts to use the ranged weapon in combat, consuming energy and dealing a fixed amount of damage (2).
-     *
-     * @param heros The hero using the item.
-     * @param target The enemy to target.
-     * @return {@code true} if the item was successfully used, {@code false} otherwise (e.g., target is dead or not enough energy).
-     */
 	@Override
-  public boolean use(Heros heros, Ennemi target) {
-    Objects.requireNonNull(heros);
+	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
+	  Objects.requireNonNull(heros);
+    Objects.requireNonNull(backpack);
+    Objects.requireNonNull(self);
+    Objects.requireNonNull(target);
     if (target == null || !target.estVivant()) return false;
-
     if (heros.depenserEnergie(cost)) {
-      // Dégâts par défaut car pas de stats dans le record RangeWeapon
+      if (backpack.hasAdjacentItem(self, Item::isHeartGem)) {
+        heros.soigner(1);
+        System.out.println("❤ La Gemme de Cœur réagit ! +1 PV");
+      }
       int degatsDefaut = 2; 
-      target.recevoirDegats(degatsDefaut);
-      System.out.println(heros + " shoots with " + name + " (" + degatsDefaut + " damage).");
+      int realDamage = heros.calculateDamageOutput(degatsDefaut);   
+      target.recevoirDegats(realDamage);
+      System.out.println(heros + " shoots with " + name + " (" + realDamage + " damage).");
       return true;
     }
     return false;
-  }
+	}
 }

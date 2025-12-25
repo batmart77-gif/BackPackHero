@@ -267,12 +267,12 @@ public class BackPack {
    * Cette méthode respecte la règle : 1 pierre = 1 case.
    */
   public int countManaStones() {
-    return (int) this.backpack.keySet().stream()
-          .map(ItemInstance::getItem)
-          .filter(Item::isManaStone)
-          .count();
+    return backpack.keySet().stream()
+            .map(ItemInstance::getItem)
+            .filter(Item::isManaStone)
+            .mapToInt(item -> 1)
+            .sum();
   }
-  
   /**
    * Vérifie si l'instance donnée touche un objet répondant au critère.
    * Deux objets sont adjacents si au moins une de leurs cases est côte à côte (distance de 1).

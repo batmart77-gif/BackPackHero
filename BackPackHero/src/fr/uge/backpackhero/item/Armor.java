@@ -59,16 +59,14 @@ public record Armor(String name, List<Position> pos, Rarity rarity, int stats, i
 		};
 	}
 	
-	/**
-     * Armor is a passive item and cannot be actively used during combat.
-     *
-     * @param hero  The hero attempting to use the armor.
-     * @param target The enemy targeted (ignored since armor is passive).
-     * @return Always false since armor cannot be actively used.
-     */
 	@Override
-  public boolean use(Heros heros, Ennemi target) {
-    System.out.println(name + " is a passive item.");
-    return false;
-	}
+  public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
+    Objects.requireNonNull(heros);
+    return false; 
+  }
+
+  @Override
+  public boolean isArmor() { 
+    return true; 
+  }
 }

@@ -58,26 +58,22 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
 		};
 	}
 	
-	/**
-     * Attempts to use the melee weapon in combat, consuming energy and dealing damage.
-     *
-     * @param heros The hero using the item.
-     * @param target The enemy to target.
-     * @return {@code true} if the item was successfully used, {@code false} otherwise (e.g., target is dead or not enough energy).
-     */
-	@Override
-  public boolean use(Heros heros, Ennemi target) {
+  @Override
+	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
     Objects.requireNonNull(heros);
-
     if (target == null || !target.estVivant()) return false;
 
     if (heros.depenserEnergie(cost)) {
+      // Bonus Gemme de Cœur
+      if (backpack.hasAdjacentItem(self, Item::isHeartGem)) {
+        heros.soigner(1);
+      }
 
       int realDamage = heros.calculateDamageOutput(stats);
       target.recevoirDegats(realDamage);
-      System.out.println(heros + " attacks with " + name + " (" + stats + " damage) !");
       return true;
     }
     return false;
   }
+
 }

@@ -58,25 +58,9 @@ public record Shield(String name, List<Position> pos, Rarity rarity, int stats, 
 		};
 	}
 	
-	/**
-     * Attempts to use the shield in combat, consuming energy and adding protection to the hero.
-     * Note: A shield does not require an enemy target.
-     *
-     * @param heros The hero using the item.
-     * @param target The enemy target (ignored for shields, can be {@code null}).
-     * @return {@code true} if the shield was successfully used, {@code false} otherwise (e.g., not enough energy).
-     */
 	@Override
-  public boolean use(Heros heros, Ennemi traget) {
-    Objects.requireNonNull(heros);
-      
-    // Un bouclier n'a pas besoin de cible ennemie
-    if (heros.depenserEnergie(cost)) {
-      int realBlock = heros.calculateBlockOutput(stats);
-      heros.ajouterProtection(realBlock);
-      System.out.println(heros + " uses " + name + " (+ " + stats + " protection).");
-      return true;
-    }
-    return false;
-  }
+	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
+	  Objects.requireNonNull(heros);
+	  return false; 
+	}
 }

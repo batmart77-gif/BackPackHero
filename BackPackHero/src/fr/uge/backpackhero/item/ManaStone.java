@@ -57,19 +57,10 @@ public record ManaStone(String name, List<Position> pos, Rarity rarity, int stat
 		};
 	}
 	
-	/**
-     * Mana Stone is a passive item and cannot be actively used during combat.
-     *
-     * @param hero  The hero attempting to use the mana stone.
-     * @param target The enemy targeted (ignored since stone is passive).
-     * @return Always false since armor cannot be actively used.
-     */
 	@Override
-  public boolean use(Heros heros, Ennemi target) {
+  public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
     Objects.requireNonNull(heros);
-    heros.soigner(stats);
-    System.out.println(heros + " uses " + name + ".");
-    return true;
+    return false; 
   }
 	
 	@Override
