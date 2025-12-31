@@ -5,8 +5,10 @@ import java.util.List;
 
 import fr.uge.backpackhero.donjon.MerchantRoom;
 import fr.uge.backpackhero.entites.Heros;
+import fr.uge.backpackhero.item.Item;
 import fr.uge.backpackhero.item.ItemInstance;
 import fr.uge.backpackhero.item.Position;
+import fr.uge.backpackhero.item.StuffFactory;
 import fr.uge.backpackhero.item.View;
 
 /**
@@ -46,7 +48,7 @@ public class MenuMarchand {
   private static void afficherInterfaceGlobale(Heros heros, MerchantRoom shop) {
     System.out.println("\n--- BOUTIQUE --- (Solde: " + heros.getGold() + " Or)");
     System.out.println("VOTRE SAC :");
-    new View(heros.getBackpack(), null, heros).printBackPack();
+    new View(heros.getBackpack(), new StuffFactory(), heros).printBackPack();
     afficherStock(shop.stock());
     afficherActions();
   }
@@ -120,13 +122,22 @@ public class MenuMarchand {
       System.out.println("Article inconnu.");
       return;
     }
+    
     ItemInstance item = shop.stock().get(index);
     int price = item.getItem().price();
+    
     if (heros.getGold() < price) {
       System.out.println("Pas assez d'or !");
       return;
     }
+
     Position pos = lirePosition(sc, heros);
+    
+    if (pos == null) {
+      return; 
+    }
+    // ----------------------------
+
     if (heros.getBackpack().add(item, pos)) {
       heros.payer(price);
       shop.stock().remove(index);
@@ -134,7 +145,7 @@ public class MenuMarchand {
     } else {
       System.out.println("Cannot place item here.");
     }
-  }
+}
 
 
   /**
@@ -164,7 +175,7 @@ public class MenuMarchand {
    */
   private static void afficherListeVente(Heros heros) {
     System.out.println("\n-- VENTE -- (X pour Annuler)");
-    new View(heros.getBackpack(), null, heros).printBackPack(); 
+    new View(heros.getBackpack(), new StuffFactory(), heros).printBackPack();;
     var items = heros.getBackpack().getItems();
     for (int i = 0; i < items.size(); i++) {
       int prixVente = items.get(i).getItem().price() / 2;

@@ -6,7 +6,7 @@ import java.awt.geom.Rectangle2D;
 
 import com.github.forax.zen.ApplicationContext;
 
-import fr.uge.backpackhero.Jeu;
+import fr.uge.backpackhero.Jeu1;
 import fr.uge.backpackhero.Mode;
 import fr.uge.backpackhero.combat.Combat;
 import fr.uge.backpackhero.donjon.Corridor;
@@ -36,7 +36,7 @@ public class GameView {
    * @param jeu          The game model containing data.
    * @param backpackView The specific view for the backpack grid.
    */
-  public static void draw(ApplicationContext context, Jeu jeu, BackPackView backpackView) {
+  public static void draw(ApplicationContext context, Jeu1 jeu, BackPackView backpackView) {
     var screenInfo = context.getScreenInfo();
     float width = screenInfo.width();
     float height = screenInfo.height();
@@ -68,7 +68,7 @@ public class GameView {
    * @param w            Screen width.
    * @param h            Screen height.
    */
-  private static void renderGameContent(Graphics2D g, Jeu jeu, BackPackView backpackView, float w, float h) {
+  private static void renderGameContent(Graphics2D g, Jeu1 jeu, BackPackView backpackView, float w, float h) {
     if (jeu.getMode() == Mode.COMBAT) {
       drawCombat(g, jeu, backpackView, w, h);
     } else {
@@ -86,7 +86,7 @@ public class GameView {
    * @param g   The graphics context.
    * @param jeu The game model.
    */
-  private static void drawDungeon(Graphics2D g, Jeu jeu) {
+  private static void drawDungeon(Graphics2D g, Jeu1 jeu) {
     g.setColor(Color.WHITE);
     g.drawString("EXPLORATION - Floor " + jeu.getDonjon().getFloorNumber(), 50, 30);
     
@@ -107,7 +107,7 @@ public class GameView {
    * @param x    The grid x-coordinate.
    * @param y    The grid y-coordinate.
    */
-  private static void drawCell(Graphics2D g, Jeu jeu, Room room, int x, int y) {
+  private static void drawCell(Graphics2D g, Jeu1 jeu, Room room, int x, int y) {
     float drawX = MARGIN_X + x * CASE_SIZE;
     float drawY = MARGIN_Y + y * CASE_SIZE;
 
@@ -147,7 +147,7 @@ public class GameView {
    * @param w            Screen width.
    * @param h            Screen height.
    */
-  private static void drawCombat(Graphics2D g, Jeu jeu, BackPackView backpackView, float w, float h) {
+  private static void drawCombat(Graphics2D g, Jeu1 jeu, BackPackView backpackView, float w, float h) {
     drawCombatBackground(g, w, h);
     drawHeroStats(g, jeu.getHeros());
     

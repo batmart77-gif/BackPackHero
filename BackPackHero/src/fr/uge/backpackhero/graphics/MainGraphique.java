@@ -16,7 +16,7 @@ import fr.uge.backpackhero.item.Position;
 import fr.uge.backpackhero.item.Stuff;
 import fr.uge.backpackhero.item.StuffFactory;
 import fr.uge.backpackhero.item.View;
-import fr.uge.backpackhero.Jeu;
+import fr.uge.backpackhero.Jeu1;
 import fr.uge.backpackhero.Mode;
 import fr.uge.backpackhero.combat.Combat;
 import fr.uge.backpackhero.graphics.GameView;
@@ -49,7 +49,7 @@ public class MainGraphique {
     
     // Creating a placeholder console view to satisfy the Jeu constructor
     View viewConsole = new View(heros.getBackpack(), factory, heros);
-    Jeu jeu = new Jeu(heros, donjon, viewConsole);
+    Jeu1 jeu = new Jeu1(heros, donjon, viewConsole);
 
     // Graphical view of the backpack
     BackPackView backpackView = new BackPackView(heros.getBackpack(), 40);
@@ -87,7 +87,7 @@ public class MainGraphique {
    * @param key     The key pressed by the user.
    * @param context The Zen application context (used for disposal/quitting).
    */
-  private static void gererClavier(Jeu jeu, KeyboardEvent.Key key, com.github.forax.zen.ApplicationContext context) {
+  private static void gererClavier(Jeu1 jeu, KeyboardEvent.Key key, com.github.forax.zen.ApplicationContext context) {
     // Quitting the application
     if (key == KeyboardEvent.Key.Q) {
       context.dispose();

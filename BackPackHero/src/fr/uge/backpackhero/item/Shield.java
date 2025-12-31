@@ -60,7 +60,12 @@ public record Shield(String name, List<Position> pos, Rarity rarity, int stats, 
 	
 	@Override
 	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
-	  Objects.requireNonNull(heros);
-	  return false; 
+	    Objects.requireNonNull(heros);
+	    if (heros.depenserEnergie(cost)) {
+	        heros.ajouterProtection(stats);
+	        System.out.println(name + " utilisé ! (+ " + stats + " protection)");
+	        return true;
+	    }
+	    return false;
 	}
 }

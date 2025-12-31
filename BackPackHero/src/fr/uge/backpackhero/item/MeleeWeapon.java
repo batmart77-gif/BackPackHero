@@ -58,22 +58,22 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
 		};
 	}
 	
-  @Override
+	@Override
 	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
-    Objects.requireNonNull(heros);
-    if (target == null || !target.estVivant()) return false;
-
-    if (heros.depenserEnergie(cost)) {
-      // Bonus Gemme de Cœur
-      if (backpack.hasAdjacentItem(self, Item::isHeartGem)) {
-        heros.soigner(1);
-      }
-
-      int realDamage = heros.calculateDamageOutput(stats);
-      target.recevoirDegats(realDamage);
-      return true;
-    }
-    return false;
-  }
+	    Objects.requireNonNull(heros);
+	    if (target == null || !target.estVivant()) return false;
+	    if (heros.depenserEnergie(cost)) {
+	        // Bonus Gemme de Cœur (Vérifie l'adjacence dans le sac)
+	        if (backpack.hasAdjacentItem(self, Item::isHeartGem)) {
+	            heros.soigner(1);
+	            System.out.println("La Gemme de Cœur soigne 1 PV !");
+	        }
+	        int realDamage = heros.calculateDamageOutput(stats);
+	        target.recevoirDegats(realDamage);
+	        System.out.println(name + " inflige " + realDamage + " dégâts.");
+	        return true;
+	    }
+	    return false;
+	}
 
 }

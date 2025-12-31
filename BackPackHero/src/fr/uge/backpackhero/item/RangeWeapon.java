@@ -63,8 +63,7 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
 	  Objects.requireNonNull(heros);
     Objects.requireNonNull(backpack);
     Objects.requireNonNull(self);
-    Objects.requireNonNull(target);
-    if (target == null || !target.estVivant()) return false;
+    //Objects.requireNonNull(target);
     if (heros.depenserEnergie(cost)) {
       if (backpack.hasAdjacentItem(self, Item::isHeartGem)) {
         heros.soigner(1);

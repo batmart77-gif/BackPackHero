@@ -6,5 +6,13 @@ package fr.uge.backpackhero.donjon;
  * Only the types listed in the {@code permits} clause can implement this interface.
  */
 public sealed interface Room permits 
-    Corridor, EnemyRoom, TreasureRoom, MerchantRoom, HealerRoom, ExitRoom {
+    Corridor, EnemyRoom, TreasureRoom, MerchantRoom, HealerRoom, ExitRoom, EventRoom, GateRoom {
+  
+  /**
+   * Indique si le héros peut traverser cette salle pour atteindre une autre destination.
+   * Selon le sujet : "en ne passant que par des couloirs".
+   */
+  default boolean isTraversable() {
+    return false;
+  }
 }

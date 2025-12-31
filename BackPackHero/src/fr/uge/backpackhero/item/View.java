@@ -103,12 +103,21 @@ public class View implements CombatInteractionDelegate {
 	 * @param item the {@code ItemInstance} that has been found
 	 * @throws NullPointerException if {@code item} is {@code null}
 	 */
+	/*
     public void displayItemFound(ItemInstance item) {
         System.out.println("You found: " + item.getName()
                            + " (" + item.getCurrentShape().size() + " slots)");
         System.out.println("Shape: " + item.getCurrentShape());
     }
-    
+    */
+	
+    public void displayItemFound(ItemInstance instance) {
+      System.out.println("\n--- VOTRE SAC ACTUEL ---");
+      printBackPack(); 
+      System.out.println("\nOBJET TROUVÉ : " + instance.getName());
+      System.out.println("Taille : " + instance.getCurrentShape().size() + " cases");
+      System.out.println("Forme : " + instance.getCurrentShape());
+    }
     /**
      * Handles the interaction loop before placing an item.
      * Allows the user to rotate the item, remove an existing item,

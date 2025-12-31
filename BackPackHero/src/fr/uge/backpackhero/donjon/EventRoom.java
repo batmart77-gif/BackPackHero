@@ -1,0 +1,42 @@
+package fr.uge.backpackhero.donjon;
+
+import java.util.Objects;
+
+import fr.uge.backpackhero.entites.Heros;
+
+/**
+ * Représente une salle de rencontre aléatoire.
+ * Le contenu est révélé uniquement lorsque le héros y pénètre.
+ */
+public record EventRoom(String description) implements Room {
+  public EventRoom {
+    Objects.requireNonNull(description);
+  }
+  
+  public enum EventType {
+    FAVORABLE,   // Gain de PV ou d'or
+    DANGEROUS,    // Piège (perte de PV)
+    MYSTERIOUS   // Trouve un objet rare
+  }
+  
+
+    public void triggerEffect(Heros heros) {
+        java.util.Random rdm = new java.util.Random();
+        int chance = rdm.nextInt(3);
+        
+        switch (chance) {
+            case 0 -> {
+                heros.gagnerOr(10);
+                System.out.println("Surprise ! Vous trouvez une bourse d'or.");
+            }
+            case 1 -> {
+                heros.recevoirDegats(5);
+                System.out.println("Aïe ! Un piège se déclenche.");
+            }
+            default -> {
+                heros.soigner(5);
+                System.out.println("Une fontaine magique vous redonne de la vie.");
+            }
+        }
+    }
+}
