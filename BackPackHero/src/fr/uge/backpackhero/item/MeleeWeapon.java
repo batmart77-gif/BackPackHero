@@ -54,6 +54,7 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
 	public String toString() {
 		return switch(name) {
 		case "Wood Sword" -> "WS";
+		case "Cloud Sword" -> "CS";
 		default -> throw new IllegalArgumentException("Unknown ranged weapon type: " + name);
 		};
 	}

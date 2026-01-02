@@ -222,7 +222,7 @@ public class MenuMarchand {
 	    }
 	    int row = Integer.parseInt(parts[0]);
 	    int col = Integer.parseInt(parts[1]);
-	    if (!heros.getBackpack().isInside(new Position(row, col))) {
+	    if (!heros.getBackpack().isAvailable(new Position(row, col))) {
 	      System.out.println("Position out of bounds.");
 	      return null;
 	    }

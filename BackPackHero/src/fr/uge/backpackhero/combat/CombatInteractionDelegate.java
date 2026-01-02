@@ -18,4 +18,10 @@ public interface CombatInteractionDelegate {
      * @param curse The Curse object being inflicted.
      */
     void handleForcedCurse(Heros heros, Curse curse);
+    
+    /**
+     * Triggered when the hero levels up to allow the user to choose new tiles.
+     * @param levelsGained Number of levels to process.
+     */
+    void handleLevelUpExpansion(int levelsGained);
 }
