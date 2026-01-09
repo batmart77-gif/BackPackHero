@@ -1,8 +1,12 @@
 package fr.uge.backpackhero.donjon;
 
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Objects;
+
+import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.entites.Ennemi;
+import fr.uge.backpackhero.graphics.ImageManager;
 
 /**
  * Represents a room containing enemies.
@@ -23,4 +27,17 @@ public record EnemyRoom(List<Ennemi> enemies) implements Room {
       throw new IllegalArgumentException("Une salle d'ennemi ne peut pas être vide");
     }
   }
+  
+  public String getSpriteName() {
+    // On récupère le premier ennemi et on demande son nom
+    // Assurez-vous que votre classe Ennemi a une méthode getName() ou nom()
+    return enemies.get(0).getName(); 
+  }
+  
+  @Override
+  public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
+      String spriteName = enemies.get(0).getName(); 
+      g.drawImage(img.getImage(spriteName), x, y, size, size, null);
+  }
+  
 }

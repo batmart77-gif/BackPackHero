@@ -12,7 +12,7 @@ public final class DungeonGenerator {
   private static final Random RDM = new Random();
 
   private DungeonGenerator() { }
-
+  
   /**
    * Crée le donjon final composé de 3 étages
    * La difficulté augmente à chaque étage (15, 30, 45)
@@ -110,6 +110,8 @@ public final class DungeonGenerator {
     };
   }
   */
+  
+  /*
   private static Ennemi generateRandomEnemyType() {
     int type = RDM.nextInt(5);
     return switch (type) {
@@ -124,22 +126,19 @@ public final class DungeonGenerator {
         // PV baissés de 74 -> 40
         default -> new Ennemi(40, 20, new BeeQueenBehavior());         
     };
-}
-  /*
-  private static List<Ennemi> createRandomEnemies(int difficultyBase) {
-    List<Ennemi> enemies = new ArrayList<>();
-    int count = (difficultyBase > 5 && RDM.nextBoolean()) ? 2 : 1; 
-    
-    for (int i = 0; i < count; i++) {
-        enemies.add(generateRandomEnemyType());
-    }
-    
-    if (difficultyBase > 10 && enemies.size() == 1) {
-        return List.of(new Ennemi(74, 20, new BeeQueenBehavior()));
-    }
-    return enemies;
-  }*/
-  
+}  */
+  private static Ennemi generateRandomEnemyType() {
+    int type = RDM.nextInt(5);
+    return switch (type) {
+        // On passe le nom exact du fichier PNG (sans l'extension)
+        case 0 -> new Ennemi("ratloup", 15, 6, new RatLoupBehavior(2, 4, 2, 2)); 
+        case 1 -> new Ennemi("ratloup", 20, 6, new RatLoupBehavior(3, 5, 3, 5)); 
+        case 2 -> new Ennemi("frogwizard", 25, 8, new FrogWizardBehavior());          
+        case 3 -> new Ennemi("Living_Shadow", 30, 25, new LivingShadowBehavior());      
+        default -> new Ennemi("beequeen", 40, 20, new BeeQueenBehavior());          
+    };
+  }
+ /*
   private static List<Ennemi> createRandomEnemies(int difficultyBase) {
     List<Ennemi> enemies = new ArrayList<>();
     // On ne met 2 ennemis que si la difficulté est très haute (> 40 au lieu de 5)
@@ -155,7 +154,21 @@ public final class DungeonGenerator {
     }
     return enemies;
   }
-
+*/
+  
+  private static List<Ennemi> createRandomEnemies(int difficultyBase) {
+    List<Ennemi> enemies = new ArrayList<>();
+    int count = (difficultyBase > 40 && RDM.nextBoolean()) ? 2 : 1; 
+    
+    for (int i = 0; i < count; i++) {
+        enemies.add(generateRandomEnemyType());
+    }
+    
+    if (difficultyBase > 50 && enemies.size() == 1) {
+        return List.of(new Ennemi("beequeen", 40, 20, new BeeQueenBehavior()));
+    }
+    return enemies;
+  }
   /**
    * Creates a random selection of loot items (1 or 2 items) by picking from the {@link Stuff} enum.
    *

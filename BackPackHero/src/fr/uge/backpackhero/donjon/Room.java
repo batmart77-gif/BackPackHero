@@ -1,5 +1,9 @@
 package fr.uge.backpackhero.donjon;
 
+import java.awt.Graphics2D;
+
+import fr.uge.backpackhero.graphics.ImageManager;
+
 /**
  * A sealed interface representing a cell or room on the dungeon map.
  * This is the generic type for all elements that compose a floor.
@@ -15,4 +19,8 @@ public sealed interface Room permits
   default boolean isTraversable() {
     return false;
   }
+  
+  void draw(Graphics2D g, int x, int y, int size, ImageManager img);
+  
+
 }

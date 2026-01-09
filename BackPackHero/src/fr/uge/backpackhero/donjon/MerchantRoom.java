@@ -1,7 +1,10 @@
 package fr.uge.backpackhero.donjon;
 
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Objects;
+
+import fr.uge.backpackhero.graphics.ImageManager;
 import fr.uge.backpackhero.item.ItemInstance;
 
 /**
@@ -22,5 +25,10 @@ public record MerchantRoom(List<ItemInstance> stock) implements Room {
   public MerchantRoom {
     Objects.requireNonNull(stock);
     stock = new java.util.ArrayList<>(stock); 
+  }
+  
+  @Override
+  public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
+      g.drawImage(img.getImage("merchant"), x, y, size, size, null);
   }
 }

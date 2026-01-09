@@ -34,6 +34,7 @@ public class Ennemi {
   /** Map storing the current status effects (Effect -> Stack Count). */
   private final Map<Effect, Integer> statusEffects1 = new HashMap<>();
 
+  private final String name;
   /**
    * Constructs a new enemy instance.
    *
@@ -43,8 +44,9 @@ public class Ennemi {
    * @throws NullPointerException if the behavior is null.
    * @throws IllegalArgumentException if PV max is not positive or XP is negative.
    */
-  public Ennemi(int pvMax, int xpReward, EnemyBehavior comportement) {
+  public Ennemi(String name,int pvMax, int xpReward, EnemyBehavior comportement) {
     Objects.requireNonNull(comportement, "Le comportement ne peut pas être nul");
+    this.name = Objects.requireNonNull(name, "Le nom de l'ennemi est requis");
     if (pvMax <= 0) {
       throw new IllegalArgumentException("Les PV max doivent être positifs.");
     }
@@ -230,4 +232,13 @@ public class Ennemi {
   public int getMaxHp() {
     return pvMax;
   }
+  
+  /**
+   * Retourne le nom de l'ennemi (ex: "ratloup"). 
+   * Utilisé par GraphicEngine pour charger l'image.
+   */
+  public String getName() {
+    return name;
+  }
+  
 }

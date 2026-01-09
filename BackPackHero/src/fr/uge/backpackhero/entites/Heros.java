@@ -176,12 +176,15 @@ public final class Heros {
    * @param amount The amount of XP gained.
    * @throws IllegalArgumentException if the amount is negative.
    */
-  public void gainXp(int amount) {
+  public int gainXp(int amount) {
     if (amount < 0) throw new IllegalArgumentException("XP négative");
+    int levelsGained = 0;
     this.currentXp += amount;     
     while (this.currentXp >= this.xpToNextLevel) {
       levelUp();
+      levelsGained++;
     }
+    return levelsGained;
   }
 
   /**
@@ -191,8 +194,7 @@ public final class Heros {
     this.currentXp -= this.xpToNextLevel;
     this.currentLevel++;
     this.xpToNextLevel = this.xpToNextLevel * 3 / 2; // Increases XP required by 50%
-    System.out.println("NIVEAU SUPÉRIEUR ! Vous êtes niveau " + currentLevel + " !");
-    backpack.expand(1); // Expands backpack by 1 unit (row/col, depending on implementation)
+    System.out.println("LEVEL UP! You are now level " + currentLevel + " !");
   }
 
   /**

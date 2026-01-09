@@ -1,8 +1,10 @@
 package fr.uge.backpackhero.donjon;
 
+import java.awt.Graphics2D;
 import java.util.Objects;
 
 import fr.uge.backpackhero.entites.Heros;
+import fr.uge.backpackhero.graphics.ImageManager;
 
 /**
  * Représente une salle de rencontre aléatoire.
@@ -38,5 +40,11 @@ public record EventRoom(String description) implements Room {
                 System.out.println("Une fontaine magique vous redonne de la vie.");
             }
         }
+    }
+    
+    
+    @Override
+    public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
+        g.drawImage(img.getImage("event"), x, y, size, size, null);
     }
 }

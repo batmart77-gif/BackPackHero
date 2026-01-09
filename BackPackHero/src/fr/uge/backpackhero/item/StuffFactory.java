@@ -99,4 +99,22 @@ public class StuffFactory {
 		case Curse -> new Curse(List.of(new Position(0,0), new Position(0,1), new Position(1,1), new Position(1,2)));
 		};
 	}
+	
+	/**
+	 * Crée un Item à partir de son nom exact.
+	 */
+	public Item getItem(String name) {
+	  Objects.requireNonNull(name);
+    return switch (name) {
+    case "Wood Sword"    -> create(Stuff.WoodSword);
+    case "Mouse Bow"     -> create(Stuff.MouseBow);
+    case "Short Arrow"   -> create(Stuff.ShortArrow);
+    case "Leather Cap"   -> create(Stuff.LeatherCap);
+    case "Rough Buckler" -> create(Stuff.RoughBuckler);
+    case "Electric Wand" -> create(Stuff.ElectricWand);
+    case "Cloud Sword"   -> create(Stuff.CloudSword);
+    case "Mana Stone"    -> create(Stuff.ManaStone);
+    default -> throw new IllegalArgumentException("Nom d'item inconnu : " + name);
+    };
+	}
 }

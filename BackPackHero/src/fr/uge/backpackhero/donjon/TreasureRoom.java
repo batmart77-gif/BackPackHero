@@ -1,7 +1,10 @@
 package fr.uge.backpackhero.donjon;
 
+import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Objects;
+
+import fr.uge.backpackhero.graphics.ImageManager;
 import fr.uge.backpackhero.item.ItemInstance;
 
 /**
@@ -20,5 +23,13 @@ public record TreasureRoom(List<ItemInstance> loot) implements Room {
    */
   public TreasureRoom {
     Objects.requireNonNull(loot);
+  }
+  
+  @Override
+  public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
+      if (loot != null && !loot.isEmpty()) {
+          String itemName = loot.get(0).getItem().name().replace(" ", "_");
+          g.drawImage(img.getImage(itemName), x, y, size, size, null);
+      }
   }
 }
