@@ -2,7 +2,11 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="BackPackHero/src"/>
-	<classpathentry kind="lib" path="BackPackHero/include/zen-6.0.jar"/>
+	<classpathentry kind="lib" path="BackPackHero/include/zen-6.0.jar" sourcepath="BackPackHero/include/zen-6.0-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/BackPackHero/BackPackHero/include/zen-6.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="BackPackHero/include/zen-6.0-javadoc.jar"/>
 	<classpathentry kind="lib" path="BackPackHero/include/zen-6.0-sources.jar"/>
 	<classpathentry kind="output" path="BackPackHero/bin"/>

@@ -12,6 +12,7 @@ public class ItemInstance {
 
     private final Item item;
     private int rotationAngle;
+    private Position pos;
 
     /**
      * Creates a new instance of an Item.
@@ -75,5 +76,13 @@ public class ItemInstance {
     @Override
     public String toString() {
         return this.item.toString();
+    }
+    
+    public void setPos(Position pos) {
+      this.pos = pos;
+    }
+  
+    public Position getPos() {
+      return pos;
     }
 }

@@ -149,7 +149,7 @@ public class BackPack {
    * @param startPos     anchor position
    * @return {@code true} if successfully added, {@code false} otherwise
    */
-  public boolean add(ItemInstance itemInstance, Position startPos) {
+  /*public boolean add(ItemInstance itemInstance, Position startPos) {
     Objects.requireNonNull(itemInstance);
     Objects.requireNonNull(startPos);
     var item = itemInstance.getItem();
@@ -163,8 +163,29 @@ public class BackPack {
             return true;
           }
     }
-  }
+  }*/
   
+  public boolean add(ItemInstance itemInstance, Position startPos) {
+     Objects.requireNonNull(itemInstance);
+     Objects.requireNonNull(startPos);
+     var item = itemInstance.getItem();
+     switch(item) {
+         case Curse c -> {
+             boolean added = addCurse(itemInstance, startPos);
+             if (added) itemInstance.setPos(startPos); // Mémorise la position
+             return added;
+         }
+         default -> {
+             if (!checkIfEnoughSpace(itemInstance, startPos)) {
+                 return false;
+             }
+             placeItem(itemInstance, startPos);
+             itemInstance.setPos(startPos); 
+             return true;
+         }
+     }
+  }
+
   /**
    * Special placement logic for curses:
    * they overwrite existing items.
@@ -297,4 +318,11 @@ public class BackPack {
       return false;
   }
 
+  public int getWidth() {
+    return column;
+  }
+  
+  public int getHeight() {
+    return row;
+  }
 }

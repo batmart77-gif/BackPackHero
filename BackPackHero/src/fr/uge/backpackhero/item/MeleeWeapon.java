@@ -50,13 +50,14 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
      * @return A short code representing this melee weapon.
      * @throws IllegalArgumentException if no short form is defined for this weapon name.
      */
-	@Override
-	public String toString() {
-		return switch(name) {
-		case "Wood Sword" -> "WS";
-		default -> throw new IllegalArgumentException("Unknown ranged weapon type: " + name);
-		};
-	}
+  @Override
+  public String toString() {
+     return switch(name) {
+         case "Wood Sword" -> "WS";
+         case "Cloud Sword" -> "CS";
+         default -> throw new IllegalArgumentException("Unknown weapon type: " + name);
+     };
+  }
 	
 	@Override
 	public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance self) {
