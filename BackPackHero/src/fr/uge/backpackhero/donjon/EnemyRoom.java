@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 import fr.uge.backpackhero.Jeu;
+import fr.uge.backpackhero.Mode;
 import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.graphics.ImageManager;
 
@@ -38,6 +39,15 @@ public record EnemyRoom(List<Ennemi> enemies) implements Room {
   public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
       String spriteName = enemies.get(0).getName(); 
       g.drawImage(img.getImage(spriteName), x, y, size, size, null);
+  }
+  
+  @Override
+  public void onClick(Jeu jeu) {
+      if (this.enemies().stream().anyMatch(e -> e.estVivant())) {
+          // On prépare le combat et on change de mode
+          jeu.lancerCombat(this.enemies()); 
+          jeu.setMode(Mode.COMBAT);
+      }
   }
   
 }

@@ -2,6 +2,7 @@ package fr.uge.backpackhero.donjon;
 
 import java.awt.Graphics2D;
 
+import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.graphics.ImageManager;
 
 /**
@@ -22,5 +23,5 @@ public sealed interface Room permits
   
   void draw(Graphics2D g, int x, int y, int size, ImageManager img);
   
-
+  void onClick(Jeu jeu);
 }

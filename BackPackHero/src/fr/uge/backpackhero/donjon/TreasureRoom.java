@@ -4,6 +4,7 @@ import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Objects;
 
+import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.graphics.ImageManager;
 import fr.uge.backpackhero.item.ItemInstance;
 
@@ -30,6 +31,18 @@ public record TreasureRoom(List<ItemInstance> loot) implements Room {
       if (loot != null && !loot.isEmpty()) {
           String itemName = loot.get(0).getItem().name().replace(" ", "_");
           g.drawImage(img.getImage(itemName), x, y, size, size, null);
+      }
+  }
+  
+  @Override
+  public void onClick(Jeu jeu) {
+      System.out.println("Coffre trouvé !");
+      for (var item : this.loot()) { // Utilise loot() ou items() selon ton record
+          System.out.println("Contenu : " + item.getName());
+          jeu.getView().displayItemFound(item);
+          if (jeu.getView().interactBeforePlacement(item)) {
+              jeu.getView().attemptPlacement(item);
+          }
       }
   }
 }

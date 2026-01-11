@@ -3,6 +3,7 @@ package fr.uge.backpackhero.donjon;
 import java.awt.Graphics2D;
 import java.util.Objects;
 
+import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.graphics.ImageManager;
 
@@ -46,5 +47,10 @@ public record EventRoom(String description) implements Room {
     @Override
     public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
         g.drawImage(img.getImage("event"), x, y, size, size, null);
+    }
+    
+    @Override
+    public void onClick(Jeu jeu) {
+        this.triggerEffect(jeu.getHeros()); // Phase 3 : Effet aléatoire
     }
 }

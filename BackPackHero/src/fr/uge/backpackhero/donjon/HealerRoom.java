@@ -3,6 +3,7 @@ package fr.uge.backpackhero.donjon;
 import java.awt.Graphics2D;
 
 import fr.uge.backpackhero.Jeu;
+import fr.uge.backpackhero.Mode;
 import fr.uge.backpackhero.graphics.ImageManager;
 
 /**
@@ -15,5 +16,9 @@ public record HealerRoom() implements Room {
       g.drawImage(img.getImage("healer"), x, y, size, size, null);
   }
   
- 
+  @Override
+  public void onClick(Jeu jeu) {
+      jeu.setMode(Mode.SOIN);
+  }
+  
 }

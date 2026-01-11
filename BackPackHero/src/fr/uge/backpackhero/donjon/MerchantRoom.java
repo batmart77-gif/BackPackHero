@@ -4,6 +4,8 @@ import java.awt.Graphics2D;
 import java.util.List;
 import java.util.Objects;
 
+import fr.uge.backpackhero.Jeu;
+import fr.uge.backpackhero.Mode;
 import fr.uge.backpackhero.graphics.ImageManager;
 import fr.uge.backpackhero.item.ItemInstance;
 
@@ -30,5 +32,10 @@ public record MerchantRoom(List<ItemInstance> stock) implements Room {
   @Override
   public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
       g.drawImage(img.getImage("merchant"), x, y, size, size, null);
+  }
+  
+  @Override
+  public void onClick(Jeu jeu) {
+    jeu.setMode(Mode.BOUTIQUE);
   }
 }

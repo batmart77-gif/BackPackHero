@@ -25,7 +25,7 @@ public final class Jeu {
     this.posX = donjon.getCurrentFloor().startX();
     this.posY = donjon.getCurrentFloor().startY();
   }
-
+/*
   public void deplacer(int dx, int dy) {
     if (modeActuel != Mode.EXPLORATION) return;
     int newX = posX + dx;
@@ -37,6 +37,19 @@ public final class Jeu {
       analyserSalle(targetRoom);
     }
   }
+  */
+  public void deplacer(int dx, int dy) {
+    if (modeActuel != Mode.EXPLORATION) return;
+    int newX = posX + dx;
+    int newY = posY + dy;
+    Room targetRoom = donjon.getCurrentFloor().getRoom(newX, newY);
+    if (targetRoom != null) {
+        this.posX = newX;
+        this.posY = newY;
+        // PLUS BESOIN DE SWITCH ICI !
+        targetRoom.onClick(this); 
+    }
+}
 
   private void analyserSalle(Room room) {
     switch (room) {
@@ -124,4 +137,15 @@ public final class Jeu {
   public View getView() {
     return view;
   }
+  
+//Permet de changer le mode (EXPLORATION, COMBAT, BOUTIQUE, etc.)
+public void setMode(Mode mode) {
+   this.modeActuel = Objects.requireNonNull(mode);
+}
+
+//Prépare l'objet de combat avec la liste d'ennemis de la salle
+public void lancerCombat(List<Ennemi> enemies) {
+   this.combatEnCours = new Combat(heros, enemies, view);
+   this.modeActuel = Mode.COMBAT;
+}
 }
