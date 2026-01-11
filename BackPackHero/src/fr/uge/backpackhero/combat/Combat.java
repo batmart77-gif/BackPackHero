@@ -92,7 +92,6 @@ public final class Combat {
     // If the action killed an enemy, grant XP and remove it
     if (success && target != null && !target.estVivant()) {
       int levels = heros.gainXp(target.getxpReward());
-      System.out.println("hihi");
       if (levels > 0) {
         delegate.handleLevelUpExpansion(levels);
       }
@@ -213,7 +212,10 @@ public final class Combat {
   public List<ItemInstance> finishCombat() {
     heros.decrementCursePenaltyDuration();
     if (getState() == CombatState.WIN) {
-      heros.gainXp(10); // Bonus XP de victoire
+      int levels = heros.gainXp(10);
+      if (levels > 0) {
+        delegate.handleLevelUpExpansion(levels);
+      }
       return generateRewards();
     }
     return List.of();

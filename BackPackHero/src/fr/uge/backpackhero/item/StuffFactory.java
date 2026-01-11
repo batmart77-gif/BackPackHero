@@ -90,11 +90,11 @@ public class StuffFactory {
 		return switch(stuff) {
 		case WoodSword -> new MeleeWeapon("Wood Sword", List.of(new Position(0,0), new Position(1,0), new Position(2,0)), stuff.rarity(), 7, 1, 10);
 		case MouseBow -> new RangeWeapon("Mouse Bow", List.of(new Position(0,0), new Position(1,0)), stuff.rarity(), 1, 12);
-		case ShortArrow -> new Arrow("Short Arrow", List.of(new Position(0,0)), stuff.rarity(), 2, 3);
+		case ShortArrow -> new Arrow("Short Arrow", List.of(new Position(0,0)), stuff.rarity(), 10, 3);
 		case LeatherCap -> new Armor("Leather Cap", List.of(new Position(0,0)), stuff.rarity(), 1, 7);
 		case RoughBuckler -> new Shield("Rough Buckler", List.of(new Position(0,0), new Position(0,1), new Position(1,0), new Position(1,1)), stuff.rarity(), 7, 1, 10);
 		case ElectricWand -> new MagicItem("Electric Wand", List.of(new Position(0,1), new Position(1,0)), stuff.rarity(), 5, 1, 13);
-		case CloudSword -> new MeleeWeapon("Cloud Sword", List.of(new Position(0,0), new Position(1,0), new Position(2,0)), stuff.rarity(), 8, 1, 30);
+		case CloudSword -> new MeleeWeapon("Cloud Sword", List.of(new Position(0,0), new Position(1,0), new Position(2,0)), stuff.rarity(), 10, 1, 30);
 		case ManaStone -> new ManaStone("Mana Stone", List.of(new Position(0,0)), stuff.rarity(), 1, 3);
 		case Curse -> new Curse(List.of(new Position(0,0), new Position(0,1), new Position(1,1), new Position(1,2)));
 		};

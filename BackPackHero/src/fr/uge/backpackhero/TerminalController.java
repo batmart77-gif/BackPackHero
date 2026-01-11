@@ -39,12 +39,13 @@ public class TerminalController {
     private void gererExploration() {
         afficherInfosExploration();
         System.out.println("Position actuelle : (" + jeu.getY() + "," + jeu.getX() + ")");
-        System.out.print("Commandes : (z) Haut | (s) Bas | (q) Gauche | (d) Droite | (i) Inventaire\n> ");
+        System.out.print("Commandes : (z) Haut | (s) Bas | (q) Gauche | (d) Droite | (i) Inventaire | (o) réorganiser le sac\n> ");
         String input = scanner.next().toLowerCase();
         int dx = 0, dy = 0;
         switch (input) {
             case "z" -> dy = -1; case "s" -> dy = 1; case "q" -> dx = -1; case "d" -> dx = 1;
             case "i" -> { jeu.getView().printBackPack(); return; }
+            case "o" -> { jeu.getView().reorganize(); return; }
             default -> { System.out.println("❓ Commande inconnue."); return; }
         }
         int tx = jeu.getX() + dx, ty = jeu.getY() + dy;

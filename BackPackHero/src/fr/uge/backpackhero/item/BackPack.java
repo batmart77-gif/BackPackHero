@@ -168,12 +168,11 @@ public class BackPack {
     this.backpack.put(itemInstance, absolutePositions);
   }
 
-
   /**
    * Attempts to place an item at the specified anchor position.
    *
    * @param itemInstance The item to place.
-   * @param startPos The anchor position (top-left of the item).
+   * @param startPos     The anchor position (top-left of the item).
    * @return {@code true} if successful.
    */
   public boolean add(ItemInstance itemInstance, Position startPos) {
@@ -182,21 +181,21 @@ public class BackPack {
 
     var item = itemInstance.getItem();
     switch (item) {
-      case Curse c -> {
-        boolean added = addCurse(itemInstance, startPos);
-        if (added) {
-          itemInstance.setPos(startPos);
-        }
-        return added;
-      }
-      default -> {
-        if (!checkIfEnoughSpace(itemInstance, startPos)) {
-          return false;
-        }
-        placeItem(itemInstance, startPos);
+    case Curse c -> {
+      boolean added = addCurse(itemInstance, startPos);
+      if (added) {
         itemInstance.setPos(startPos);
-        return true;
       }
+      return added;
+    }
+    default -> {
+      if (!checkIfEnoughSpace(itemInstance, startPos)) {
+        return false;
+      }
+      placeItem(itemInstance, startPos);
+      itemInstance.setPos(startPos);
+      return true;
+    }
     }
   }
 
@@ -286,6 +285,21 @@ public class BackPack {
         .anyMatch(entry -> areAdjacent(myPositions, entry.getValue()));
   }
 
+  /**
+   * Recherche un objet adjacent répondant à un critère et renvoie le premier
+   * trouvé. (utile)
+   */
+  public Optional<ItemInstance> getAdjacentItemInstance(ItemInstance self,
+      java.util.function.Predicate<Item> criteria) {
+    var myPositions = backpack.get(self);
+    if (myPositions == null)
+      return Optional.empty();
+
+    return backpack.entrySet().stream().filter(entry -> !entry.getKey().equals(self))
+        .filter(entry -> criteria.test(entry.getKey().getItem()))
+        .filter(entry -> areAdjacent(myPositions, entry.getValue())).map(Map.Entry::getKey).findFirst();
+  }
+
   private boolean areAdjacent(List<Position> posA, List<Position> posB) {
     for (var pA : posA) {
       for (var pB : posB) {
@@ -298,6 +312,27 @@ public class BackPack {
     return false;
   }
 
+  /**
+   * Retire tous les objets du sac et les renvoie sous forme de liste. Les cases
+   * débloquées et l'or restent inchangés. * @return La liste des ItemInstance qui
+   * étaient dans le sac.
+   */
+  public List<ItemInstance> removeAllItems() {
+    // 1. On récupère tous les objets avant de vider
+    List<ItemInstance> itemsToReplace = new ArrayList<>(this.backpack.keySet());
+
+    // 2. On vide les structures de données liées au placement
+    this.grid.clear();
+    this.backpack.clear();
+
+    // 3. On remet les positions des instances à null (optionnel mais propre)
+    for (ItemInstance instance : itemsToReplace) {
+      instance.setPos(null);
+    }
+
+    return itemsToReplace;
+  }
+
   public int getWidth() {
     return unlockedTiles.stream().mapToInt(Position::column).max().orElse(0) + 1;
   }
@@ -305,4 +340,10 @@ public class BackPack {
   public int getHeight() {
     return unlockedTiles.stream().mapToInt(Position::row).max().orElse(0) + 1;
   }
+
+  public List<Position> getPositions(ItemInstance instance) {
+    Objects.requireNonNull(instance);
+    return List.copyOf(backpack.getOrDefault(instance, List.of()));
+  }
+
 }
