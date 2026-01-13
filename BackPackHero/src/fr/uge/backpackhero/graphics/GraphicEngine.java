@@ -17,21 +17,17 @@ public class GraphicEngine {
   private final ImageLoader img = new ImageLoader();
   private final ViewGraphic viewGraphic;
   private static final int TILE_SIZE = 64;
-  
+
   private ItemInstance selectedItem = null;
   private int mouseX, mouseY;
-  
+
   // Coordonnées calculées pour le donjon et le sac
   private int dungeonStartX, dungeonStartY;
   private int backpackStartX, backpackStartY;
 
   public GraphicEngine(Jeu jeu) {
     this.jeu = jeu;
-    this.viewGraphic = new ViewGraphic(
-      jeu.getHeros().getBackpack(), 
-      new StuffFactory(), 
-      jeu.getHeros()
-    );
+    this.viewGraphic = new ViewGraphic(jeu.getHeros().getBackpack(), new StuffFactory(), jeu.getHeros());
   }
 
   public void start() {
@@ -71,16 +67,17 @@ public class GraphicEngine {
           var currentRoom = floor.getRoom(jeu.getX(), jeu.getY());
 
           switch (jeu.getMode()) {
-            case BOUTIQUE -> {
-              if (currentRoom instanceof fr.uge.backpackhero.donjon.MerchantRoom merchant) {
-                renderMerchantUI(g, merchant);
-              }
+          case BOUTIQUE -> {
+            if (currentRoom instanceof fr.uge.backpackhero.donjon.MerchantRoom merchant) {
+              renderMerchantUI(g, merchant);
             }
-            case SOIN -> renderHealerUI(g, screenInfo);
-            case COMBAT -> renderCombatUI(g, screenInfo);
-            case PERDU -> renderGameOver(g, screenInfo);
-            case GAGNE -> renderVictory(g, screenInfo);
-            default -> {}
+          }
+          case SOIN -> renderHealerUI(g, screenInfo);
+          case COMBAT -> renderCombatUI(g, screenInfo);
+          case PERDU -> renderGameOver(g, screenInfo);
+          case GAGNE -> renderVictory(g, screenInfo);
+          default -> {
+          }
           }
 
           viewGraphic.render(g, screenInfo);
@@ -89,11 +86,14 @@ public class GraphicEngine {
           ItemInstance itemToShow = viewGraphic.getCurrentItem();
           if (itemToShow != null && (viewGraphic.getMode() == ViewGraphic.InteractionMode.WAITING_POSITION 
               || viewGraphic.getMode() == ViewGraphic.InteractionMode.REORGANIZE)) {
-            String fileName = itemToShow.getItem().name().replace(" ", "_");
-            Image ghost = img.getImage(fileName);
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
-            g.drawImage(ghost, mouseX - 32, mouseY - 32, TILE_SIZE, TILE_SIZE, null);
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+              
+              g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
+              
+              // On dessine l'item au niveau de la souris
+              // On décale de -32 pour que la souris soit au centre de la première case
+              drawItem(g, itemToShow, mouseX - 32, mouseY - 32, TILE_SIZE);
+              
+              g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
           }
         });
 
@@ -109,11 +109,11 @@ public class GraphicEngine {
   private void calculatePositions(ScreenInfo screenInfo) {
     var floor = jeu.getDonjon().getCurrentFloor();
     var bp = jeu.getHeros().getBackpack();
-    
+
     int dungeonWidth = floor.width() * TILE_SIZE;
     dungeonStartX = (screenInfo.width() - dungeonWidth) / 2;
     dungeonStartY = 100;
-    
+
     backpackStartX = screenInfo.width() - (bp.getWidth() * TILE_SIZE) - 50;
     backpackStartY = 150;
   }
@@ -125,7 +125,7 @@ public class GraphicEngine {
 
   private void renderDungeon(Graphics2D g, ScreenInfo screenInfo) {
     var floor = jeu.getDonjon().getCurrentFloor();
-    
+
     for (int y = 0; y < floor.height(); y++) {
       for (int x = 0; x < floor.width(); x++) {
         int px = dungeonStartX + x * TILE_SIZE;
@@ -151,8 +151,7 @@ public class GraphicEngine {
     if (hoverCol >= 0 && hoverCol < floor.width() && hoverRow >= 0 && hoverRow < floor.height()) {
       g.setColor(new Color(255, 255, 255, 80));
       g.setStroke(new BasicStroke(3));
-      g.drawRect(dungeonStartX + hoverCol * TILE_SIZE, dungeonStartY + hoverRow * TILE_SIZE, 
-                 TILE_SIZE, TILE_SIZE);
+      g.drawRect(dungeonStartX + hoverCol * TILE_SIZE, dungeonStartY + hoverRow * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
   }
 
@@ -172,7 +171,7 @@ public class GraphicEngine {
       for (int c = 0; c < bp.getWidth(); c++) {
         int px = backpackStartX + c * TILE_SIZE;
         int py = backpackStartY + r * TILE_SIZE;
-        
+
         Position pos = new Position(r, c);
         if (bp.getUnlockedTiles().contains(pos)) {
           g.setColor(new Color(255, 255, 255, 40));
@@ -184,7 +183,7 @@ public class GraphicEngine {
           g.fillRect(px, py, TILE_SIZE, TILE_SIZE);
           g.setColor(new Color(100, 100, 100, 100));
           g.drawRect(px, py, TILE_SIZE, TILE_SIZE);
-          
+
           g.setFont(new Font("Arial", Font.BOLD, 24));
           g.setColor(new Color(150, 150, 150, 180));
           g.drawString("#", px + 22, py + 42);
@@ -195,23 +194,21 @@ public class GraphicEngine {
     for (ItemInstance item : bp.getItems()) {
       Position p = item.getPos();
       if (p != null) {
-        String nameForFile = item.getItem().name().replace(" ", "_");
-        Image objImg = img.getImage(nameForFile);
-        if (objImg != null) {
-          g.drawImage(objImg, backpackStartX + p.column() * TILE_SIZE, 
-                     backpackStartY + p.row() * TILE_SIZE, TILE_SIZE, TILE_SIZE, null);
-        }
+        int px = backpackStartX + p.column() * TILE_SIZE;
+        int py = backpackStartY + p.row() * TILE_SIZE;
+
+        // On appelle notre nouvelle fonction !
+        drawItem(g, item, px, py, TILE_SIZE);
       }
     }
-    
+
     int hoverCol = (mouseX - backpackStartX) / TILE_SIZE;
     int hoverRow = (mouseY - backpackStartY) / TILE_SIZE;
-    
+
     if (hoverCol >= 0 && hoverCol < bp.getWidth() && hoverRow >= 0 && hoverRow < bp.getHeight()) {
       g.setColor(new Color(100, 200, 255, 100));
       g.setStroke(new BasicStroke(2));
-      g.drawRect(backpackStartX + hoverCol * TILE_SIZE, backpackStartY + hoverRow * TILE_SIZE, 
-                 TILE_SIZE, TILE_SIZE);
+      g.drawRect(backpackStartX + hoverCol * TILE_SIZE, backpackStartY + hoverRow * TILE_SIZE, TILE_SIZE, TILE_SIZE);
     }
   }
 
@@ -234,7 +231,7 @@ public class GraphicEngine {
 
     g.drawString("Gold: " + jeu.getHeros().getGold(), 350, 48);
     g.drawString("Niveau: " + jeu.getHeros().getLevel(), 500, 48);
-    
+
     if (jeu.getMode() == Mode.COMBAT) {
       g.drawString("Énergie: " + jeu.getHeros().getEnergie(), 650, 48);
       g.drawString("Mana: " + jeu.getHeros().getMana(), 800, 48);
@@ -267,20 +264,21 @@ public class GraphicEngine {
     if (viewGraphic.getMode() != ViewGraphic.InteractionMode.NONE) {
       return;
     }
-    
+
     switch (kb.key()) {
-      case UP, Z -> jeu.deplacer(0, -1);
-      case DOWN, S -> jeu.deplacer(0, 1);
-      case LEFT, Q -> jeu.deplacer(-1, 0);
-      case RIGHT, D -> jeu.deplacer(1, 0);
-      case I -> {
-        System.out.println("=== INVENTAIRE ===");
-        jeu.getView().printBackPack();
-      }
-      case O -> {
-        viewGraphic.reorganize();
-      }
-      default -> {}
+    case UP, Z -> jeu.deplacer(0, -1);
+    case DOWN, S -> jeu.deplacer(0, 1);
+    case LEFT, Q -> jeu.deplacer(-1, 0);
+    case RIGHT, D -> jeu.deplacer(1, 0);
+    case I -> {
+      System.out.println("=== INVENTAIRE ===");
+      jeu.getView().printBackPack();
+    }
+    case O -> {
+      viewGraphic.reorganize();
+    }
+    default -> {
+    }
     }
   }
 
@@ -291,7 +289,7 @@ public class GraphicEngine {
     int mx = pe.location().x();
     int my = pe.location().y();
 
-    if (viewGraphic.getMode() == ViewGraphic.InteractionMode.WAITING_POSITION 
+    if (viewGraphic.getMode() == ViewGraphic.InteractionMode.WAITING_POSITION
         || viewGraphic.getMode() == ViewGraphic.InteractionMode.REORGANIZE
         || viewGraphic.getMode() == ViewGraphic.InteractionMode.LEVEL_UP) {
       viewGraphic.handleMouseClick(mx, my, backpackStartX, backpackStartY);
@@ -339,7 +337,7 @@ public class GraphicEngine {
     int panelWidth = 300;
     int startX = (screenInfo.width() - panelWidth) / 2;
     int startY = 200;
-    
+
     if (mx >= startX + 50 && mx <= startX + 250 && my >= startY + 100 && my <= startY + 140) {
       if (jeu.getHeros().getGold() >= 5) {
         jeu.getHeros().soigner(10);
@@ -349,7 +347,7 @@ public class GraphicEngine {
         System.out.println("Pas assez d'or !");
       }
     }
-    
+
     if (mx >= startX + 50 && mx <= startX + 250 && my >= startY + 200 && my <= startY + 240) {
       if (jeu.getHeros().getGold() >= 15) {
         jeu.getHeros().soigner(jeu.getHeros().getPvMax());
@@ -401,14 +399,14 @@ public class GraphicEngine {
     List<Ennemi> ennemis = combat.getAliveEnemies();
     if (ennemis.isEmpty())
       return;
-      
+
     int spacing = screenInfo.width() / (ennemis.size() + 1);
 
     for (int i = 0; i < ennemis.size(); i++) {
       Ennemi e = ennemis.get(i);
       int x = (i + 1) * spacing - 64;
       int y = 250;
-      
+
       // Zone cliquable élargie (image entière + zone du bouton)
       if (mx >= x && mx <= x + 128 && my >= y - 30 && my <= y + 170) {
         System.out.println("Clic détecté sur " + e.getName());
@@ -419,7 +417,7 @@ public class GraphicEngine {
       }
     }
   }
-  
+
   private void renderGameOver(Graphics2D g, ScreenInfo screenInfo) {
     g.setColor(Color.BLACK);
     g.fillRect(0, 0, screenInfo.width(), screenInfo.height());
@@ -471,13 +469,13 @@ public class GraphicEngine {
         drawAttackButton(g, x + 14, y + 45);
       }
     }
-    
+
     // Instructions
     g.setFont(new Font("Arial", Font.PLAIN, 16));
     g.setColor(Color.YELLOW);
     g.drawString("Cliquez sur un ennemi pour attaquer !", screenInfo.width() / 2 - 150, 150);
   }
-  
+
   private void renderHealerUI(Graphics2D g, ScreenInfo screenInfo) {
     int panelWidth = 300;
     int panelHeight = 350;
@@ -505,7 +503,7 @@ public class GraphicEngine {
     g.setColor(Color.WHITE);
     g.drawString("Cliquez sur un bouton pour acheter", startX + 50, startY + 320);
   }
-  
+
   private void renderMerchantUI(Graphics2D g, fr.uge.backpackhero.donjon.MerchantRoom room) {
     int winW = 500;
     int winH = 300;
@@ -540,7 +538,36 @@ public class GraphicEngine {
     g.setColor(Color.WHITE);
     g.drawString("Cliquez sur un objet pour acheter", startX + 130, startY + 270);
   }
-  
+
+  private void drawItem(Graphics2D g, ItemInstance item, int px, int py, int cellSize) {
+    String name = item.getItem().name().replace(" ", "_");
+    Image imgFile = img.getImage(name);
+    if (imgFile == null)
+      return;
+
+    // On calcule la taille de l'item non tourné (sa forme de base)
+    // pour que l'image ne soit pas déformée
+    var baseShape = item.getItem().shapeAtRotation(0);
+    int baseW = baseShape.stream().mapToInt(Position::column).max().getAsInt() + 1;
+    int baseH = baseShape.stream().mapToInt(Position::row).max().getAsInt() + 1;
+
+    var oldTransform = g.getTransform();
+
+    // 1. On se place sur la case
+    g.translate(px, py);
+
+    // 2. Si l'objet est tourné, on applique la rotation visuelle
+    if (item.getRotationAngle() != 0) {
+      // On tourne autour du centre de la première case
+      g.rotate(Math.toRadians(item.getRotationAngle()), cellSize / 2.0, cellSize / 2.0);
+    }
+
+    // 3. On dessine avec les dimensions de base
+    g.drawImage(imgFile, 0, 0, baseW * cellSize, baseH * cellSize, null);
+
+    g.setTransform(oldTransform);
+  }
+
   public ViewGraphic getViewGraphic() {
     return viewGraphic;
   }
