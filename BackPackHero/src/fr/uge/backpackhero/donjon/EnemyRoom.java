@@ -7,7 +7,7 @@ import java.util.Objects;
 import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.Mode;
 import fr.uge.backpackhero.entites.Ennemi;
-import fr.uge.backpackhero.graphics.ImageManager;
+import fr.uge.backpackhero.graphics.ImageLoader;
 
 /**
  * Represents a room containing enemies.
@@ -36,7 +36,7 @@ public record EnemyRoom(List<Ennemi> enemies) implements Room {
   }
   
   @Override
-  public void draw(Graphics2D g, int x, int y, int size, ImageManager img) {
+  public void draw(Graphics2D g, int x, int y, int size, ImageLoader img) {
       String spriteName = enemies.get(0).getName(); 
       g.drawImage(img.getImage(spriteName), x, y, size, size, null);
   }

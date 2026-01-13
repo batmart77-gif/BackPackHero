@@ -3,7 +3,7 @@ package fr.uge.backpackhero.donjon;
 import java.awt.Graphics2D;
 
 import fr.uge.backpackhero.Jeu;
-import fr.uge.backpackhero.graphics.ImageManager;
+import fr.uge.backpackhero.graphics.ImageLoader;
 
 /**
  * A sealed interface representing a cell or room on the dungeon map.
@@ -21,7 +21,7 @@ public sealed interface Room permits
     return false;
   }
   
-  void draw(Graphics2D g, int x, int y, int size, ImageManager img);
+  void draw(Graphics2D g, int x, int y, int size, ImageLoader img);
   
   void onClick(Jeu jeu);
 }
