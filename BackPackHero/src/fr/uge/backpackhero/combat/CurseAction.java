@@ -20,6 +20,11 @@ public record CurseAction(Curse curse) implements EnemyAction {
     Objects.requireNonNull(curse);
   }
   
+  /**
+   * Provides a human-readable description of the curse action for the UI.
+   *
+   * @return A string indicating a curse intention.
+   */
   @Override
   public String description() {
     return "Malediction ";

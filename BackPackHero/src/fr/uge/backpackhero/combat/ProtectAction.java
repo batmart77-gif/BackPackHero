@@ -20,6 +20,11 @@ public record ProtectAction(int amount) implements EnemyAction {
     }
   }
   
+  /**
+   * Provides a human-readable description of the protection action for the interface.
+   *
+   * @return a descriptive string including the protection value.
+   */
   @Override
   public String description() {
     return "Protect (" + amount + ")";

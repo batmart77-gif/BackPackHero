@@ -20,6 +20,10 @@ public record AttackAction(int damage) implements EnemyAction {
     }
   }
   
+  /**
+   * Returns a human-readable description of the attack action for the UI.
+   * * @return A string describing the attack intention.
+   */
   @Override
   public String description() {
       return "Attack (" + damage + ")";

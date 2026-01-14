@@ -10,235 +10,139 @@ import fr.uge.backpackhero.combat.EnemyBehavior;
 
 /**
  * Represents an enemy unit in the dungeon.
- * Manages its health, protection, status effects, and AI behavior during combat.
+ * Manages statistics, status effects, and delegates combat logic to its behavior.
  */
-public class Ennemi {
-  /** Current health points (HP). */
-  private int pv;
-  
-  /** Maximum health points (HP) for this enemy. */
-  private final int pvMax;
-  
-  /** Current protection (block) amount. Absorbs damage before HP. */
-  private int protection;
-  
-  /** Experience points awarded to the hero upon defeating this enemy. */
-  private final int xpReward;
-  
-  /** The AI behavior module piloting this enemy. */
-  private final EnemyBehavior comportement;
-  
-  /** The action (intent) announced by the enemy for the current turn. */
-  private EnemyAction actionAnnoncee;
-  
-  /** Map storing the current status effects (Effect -> Stack Count). */
-  private final Map<Effect, Integer> statusEffects1 = new HashMap<>();
-
+public final class Ennemi {
   private final String name;
+  private final int pvMax;
+  private final int xpReward;
+  private final EnemyBehavior behavior;
+  private final Map<Effect, Integer> statusEffects = new HashMap<>();
+  private int pv;
+  private int protection;
+  private EnemyAction announcedAction;
+
   /**
-   * Constructs a new enemy instance.
+   * Constructs a new enemy with specified statistics and behavior.
    *
-   * @param pvMax The maximum HP of this enemy.
-   * @param xpReward The experience points gained by the hero upon defeat.
-   * @param comportement The AI behavior module.
-   * @throws NullPointerException if the behavior is null.
-   * @throws IllegalArgumentException if PV max is not positive or XP is negative.
+   * @param name      the non-null name of the enemy.
+   * @param pvMax     the maximum health points (must be positive).
+   * @param xpReward  the experience points awarded upon defeat.
+   * @param behavior  the non-null AI behavior module.
+   * @throws NullPointerException if name or behavior is null.
    */
-  public Ennemi(String name,int pvMax, int xpReward, EnemyBehavior comportement) {
-    Objects.requireNonNull(comportement, "Le comportement ne peut pas être nul");
-    this.name = Objects.requireNonNull(name, "Le nom de l'ennemi est requis");
-    if (pvMax <= 0) {
-      throw new IllegalArgumentException("Les PV max doivent être positifs.");
-    }
-    if (xpReward < 0) {
-      throw new IllegalArgumentException("L'XP ne peut pas être négative");
+  public Ennemi(String name, int pvMax, int xpReward, EnemyBehavior behavior) {
+    this.name = Objects.requireNonNull(name);
+    this.behavior = Objects.requireNonNull(behavior);
+    if (pvMax <= 0 || xpReward < 0) {
+      throw new IllegalArgumentException("Invalid health or XP reward");
     }
     this.pvMax = pvMax;
     this.pv = pvMax;
-    this.protection = 0;
-    this.comportement = comportement;
-    this.actionAnnoncee = null;
     this.xpReward = xpReward;
   }
 
   /**
-   * Chooses the next action by delegating to its behavior interface.
-   * Called at the start of the hero's turn to announce the enemy's intent.
+   * Plans the next action for the current turn.
    *
-   * @return The planned {@link EnemyAction}.
+   * @return the selected EnemyAction intent.
    */
   public EnemyAction choisirProchaineAction() {
-    this.actionAnnoncee = comportement.chooseAction();
-    return actionAnnoncee;
+    this.announcedAction = behavior.chooseAction();
+    return announcedAction;
   }
   
   /**
-   * Executes the action that was previously announced on the Hero.
-   * Called during the enemy's turn.
+   * Executes the announced action on the specified hero.
    *
-   * @param heros The hero target.
+   * @param heros the targeted hero.
    */
   public void executerAction(Heros heros) {
     Objects.requireNonNull(heros);
-    if (actionAnnoncee == null) return;
-    
-    comportement.executeAction(actionAnnoncee, this, heros);
-    this.actionAnnoncee = null; // The action is consumed
+    if (announcedAction != null) {
+      behavior.executeAction(announcedAction, this, heros);
+      this.announcedAction = null;
+    }
   }
 
   /**
-   * Inflicts damage upon the enemy (called by the Hero's action).
-   * Handles {@link Effect#DODGE} charges and protection block.
+   * Processes damage intake, considering protection and dodge effects.
    *
-   * @param montantDegats The amount of damage to inflict.
-   * @throws IllegalArgumentException if the damage amount is negative.
+   * @param amount the damage amount to receive.
    */
-  public void recevoirDegats(int montantDegats) {
-    if (montantDegats < 0) {
-      throw new IllegalArgumentException("On ne peut pas infliger de dégâts négatifs");
+  public void recevoirDegats(int amount) {
+    if (amount < 0) {
+      throw new IllegalArgumentException("Damage cannot be negative");
     }
-    // Handle DODGE
-    int dodge = getStatus(Effect.DODGE);
-    if (dodge > 0) {
-        System.out.println("L'ennemi ESQUIVE l'attaque ! (" + (dodge - 1) + " charges restantes)");
-        return; // Damage completely ignored
+    if (getStatus(Effect.DODGE) > 0) {
+      return;
     }
-    
-    // Protection absorption
-    int degatsAbsorbes = Math.min(montantDegats, this.protection);
-    this.protection -= degatsAbsorbes;
-    montantDegats -= degatsAbsorbes;
-    
-    // Apply remaining damage to HP
-    if (montantDegats > 0) {
-        this.pv = Math.max(0, this.pv - montantDegats);
-    }  
+    int absorbed = Math.min(amount, this.protection);
+    this.protection -= absorbed;
+    this.pv = Math.max(0, this.pv - (amount - absorbed));
   }
   
   /**
-   * Increases the protection (block) of this enemy.
-   * Called by the enemy's behavior (ProtectAction).
+   * Adds protection points to the enemy.
    *
-   * @param montant The amount of protection to add.
-   * @throws IllegalArgumentException if the amount is negative.
+   * @param amount the quantity of protection to add.
    */
-  public void gagnerProtection(int montant) {
-    if (montant < 0) {
-      throw new IllegalArgumentException("On ne peut pas gagner de protection négative");
+  public void gagnerProtection(int amount) {
+    if (amount < 0) {
+      throw new IllegalArgumentException("Protection cannot be negative");
     }
-    this.protection += montant;
+    this.protection += amount;
   }
 
   /**
-   * Checks if the enemy's current HP is greater than zero.
+   * Adds stacks of a status effect to the enemy.
    *
-   * @return {@code true} if the enemy is alive.
+   * @param effect the non-null status effect type.
+   * @param stacks the number of stacks to add.
    */
-  public boolean estVivant() {
-    return this.pv > 0;
+  public void addStatus(Effect effect, int stacks) {
+    Objects.requireNonNull(effect);
+    statusEffects.merge(effect, stacks, Integer::sum);
   }
 
   /**
-   * Gets the XP reward granted to the hero upon defeating this enemy.
+   * Retrieves the current stack count of a status effect.
    *
-   * @return The XP amount.
-   */
-  public int getxpReward() {
-    return xpReward;
-  }
-  
-  /**
-   * Adds X stacks of a specific status effect to the enemy.
-   *
-   * @param effect The effect to add.
-   * @param amount The number of stacks to add.
-   */
-  public void addStatus(Effect effect, int amount) {
-    statusEffects1.merge(effect, amount, Integer::sum);
-    System.out.println("✨ L'ennemi gagne : " + effect.getNom() + " (Cumul: " + getStatus(effect) + ")");
-  }
-
-  /**
-   * Retrieves the current stack count (X value) of a specific status effect.
-   *
-   * @param effect The effect to check.
-   * @return The stack count, or 0 if the effect is absent.
+   * @param effect the non-null effect to check.
+   * @return the stack count, or 0 if absent.
    */
   public int getStatus(Effect effect) {
-    return statusEffects1.getOrDefault(effect, 0);
+    Objects.requireNonNull(effect);
+    return statusEffects.getOrDefault(effect, 0);
   }
 
   /**
-   * Triggers effects that occur at the START of the enemy's turn.
-   * Handles {@link Effect#REGEN} and {@link Effect#BURN}.
+   * Triggers regeneration and burn effects at the start of the turn.
    */
   public void triggerStartTurnEffects() {
-    // 1. Regeneration
     int regen = getStatus(Effect.REGEN);
     if (regen > 0) {
-      System.out.println("L'ennemi se régénère : +" + regen + " PV");
       this.pv = Math.min(this.pv + regen, this.pvMax);
     }
-    
-    // 2. Burn (Damage at the start of the turn)
-    int burn = getStatus(Effect.BURN);
-    if (burn > 0) {
-      System.out.println("L'ennemi brûle : -" + burn + " PV");
-      recevoirDegats(burn);
-    }
+    recevoirDegats(getStatus(Effect.BURN));
   }
 
   /**
-   * Triggers effects that occur at the END of the enemy's turn.
-   * Handles {@link Effect#POISON} and the general degradation of status stacks.
+   * Triggers poison and decreases status stacks at the end of the turn.
    */
   public void triggerEndTurnEffects() {
-    // 1. Poison (Ignores armor!)
     int poison = getStatus(Effect.POISON);
-    if (poison > 0) {
-      System.out.println("Le Poison ronge l'ennemi : -" + poison + " PV");
-      // Poison bypasses protection
-      this.pv = Math.max(0, this.pv - poison);
-    }
-    
-    // 2. Degradation of effects (-1 stack everywhere at the end of the turn)
-    statusEffects1.replaceAll((e, v) -> v - 1);
-    statusEffects1.values().removeIf(v -> v <= 0);
+    this.pv = Math.max(0, this.pv - poison);
+    statusEffects.replaceAll((e, v) -> v - 1);
+    statusEffects.values().removeIf(v -> v <= 0);
   }
 
-  /**
-   * Gets the current health points (HP) of the enemy.
-   *
-   * @return Current HP.
-   */
-  public int getHp() {
-    return pv;
-  }
-  
-  /**
-   * Clears the announced action, typically after the action has been executed.
-   */
-  public void clearActionAnnoncee() {
-    this.actionAnnoncee = null;
-  }
-  
-  /**
-   * Gets the action announced by the enemy for the current turn.
-   *
-   * @return The announced {@link EnemyAction}.
-   */
-  public EnemyAction getActionAnnoncee() { return actionAnnoncee; }
-
-  public int getMaxHp() {
-    return pvMax;
-  }
-  
-  /**
-   * Retourne le nom de l'ennemi (ex: "ratloup"). 
-   * Utilisé par GraphicEngine pour charger l'image.
-   */
-  public String getName() {
-    return name;
-  }
-  
+  /** @return true if health points are above zero. */
+  public boolean estVivant() { return pv > 0; }
+  public int getHp() { return pv; }
+  public int getMaxHp() { return pvMax; }
+  public int getxpReward() { return xpReward; }
+  public String getName() { return name; }
+  public EnemyAction getActionAnnoncee() { return announcedAction; }
+  public int getProtection() { return protection; }
 }

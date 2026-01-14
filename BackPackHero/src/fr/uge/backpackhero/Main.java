@@ -10,9 +10,9 @@
 //}
 
 
-
 package fr.uge.backpackhero;
 
+import java.util.Objects;
 import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.donjon.DungeonGenerator;
 import fr.uge.backpackhero.donjon.Dungeon;
@@ -23,39 +23,44 @@ import fr.uge.backpackhero.item.ItemInstance;
 import fr.uge.backpackhero.item.Position;
 import fr.uge.backpackhero.graphics.GraphicEngine;
 
-public class Main {
-    public static void main(String[] args) {
-        // 1. Initialisation du héros avec 40 PV
-        Heros heros = new Heros();
-        
-        // 2. Génération du donjon
-        Dungeon dungeon = DungeonGenerator.createDungeonPhase3();
-        
-        // 3. Préparation de la fabrique d'objets
-        StuffFactory factory = new StuffFactory();
-        
-        // 4. Création de la vue logique
-        View view = new View(heros.getBackpack(), factory, heros);
-        
-        // 5. Initialisation du modèle logique du jeu
-        Jeu jeu = new Jeu(heros, dungeon, view);
+/**
+ * Entry point for the Backpack Hero application.
+ * This class orchestrates the initialization of the hero, the dungeon, 
+ * the game model, and launches the graphical interface.
+ */
+public final class Main {
 
-        // --- SECTION TEST : AJOUT D'UN OBJET DANS LE SAC ---
-        // On récupère le modèle de l'épée
-        Item swordTemplate = factory.getItem("Wood Sword");
-        
-        // On crée l'instance physique pour le sac
-        ItemInstance swordInstance = new ItemInstance(swordTemplate);
-        
-        // On l'ajoute à la position (0,0) du sac
-        heros.getBackpack().add(swordInstance, new Position(0, 0));
-        // ---------------------------------------------------
+  /**
+   * Main method to start the game.
+   * * @param args command line arguments.
+   * @throws NullPointerException if args is null.
+   */
+  public static void main(String[] args) {
+    Objects.requireNonNull(args);
 
-        // 6. Lancement de l'interface graphique
-        GraphicEngine engine = new GraphicEngine(jeu);
-        
-        System.out.println("Lancement de Backpack Hero (Version Graphique)...");
-        engine.start();
-        
+    Heros heros = new Heros();
+    Dungeon dungeon = DungeonGenerator.createDungeonPhase3();
+    StuffFactory factory = new StuffFactory();
+    View view = new View(heros.getBackpack(), factory, heros);
+    
+    Jeu jeu = new Jeu(heros, dungeon, view);
+    setupInitialInventory(heros, factory);
+
+    System.out.println("Launching Backpack Hero (Graphical Version)...");
+    new GraphicEngine(jeu).start();
+  }
+
+  /**
+   * Adds basic starting equipment to the hero's backpack for testing.
+   *
+   * @param heros   the hero receiving the items.
+   * @param factory the factory used to create items.
+   */
+  private static void setupInitialInventory(Heros heros, StuffFactory factory) {
+    Item sword = factory.getItem("Wood Sword");
+    if (sword != null) {
+      heros.getBackpack().add(new ItemInstance(sword), new Position(0, 0));
     }
+  }
 }
+

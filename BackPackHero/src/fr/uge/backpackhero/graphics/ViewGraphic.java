@@ -416,7 +416,7 @@ public class ViewGraphic implements CombatInteractionDelegate {
       }
     }
   }
-
+ 
   private void removeCurseWithPenalty() {
     if (currentItem != null) {
       backPack.removeItem(currentItem);

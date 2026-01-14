@@ -1,107 +1,73 @@
 package fr.uge.backpackhero;
 
+import java.util.Objects;
 import java.util.Scanner;
 import fr.uge.backpackhero.entites.Heros;
 
 /**
- * Handles the interaction logic between the player (Hero) and the Healer in a console-based interface.
- * This class manages the healing services offered in a HealerRoom.
+ * Handles the interaction logic between the hero and the Healer.
+ * Provides healing services in exchange for gold pieces as defined in the rules.
  */
 public class MenuGuerisseur {
-  private static final int PRIX_SOIN_LEGER = 5;
-  private static final int PRIX_SOIN_TOTAL = 15;
+  private static final int LIGHT_HEAL_PRICE = 5;
+  private static final int FULL_HEAL_PRICE = 15;
+  private static final int LIGHT_HEAL_AMOUNT = 10;
 
   /**
-   * Opens the healer interaction menu.
-   * This method starts the main loop for the healer interface, allowing the player to choose a healing option or leave.
+   * Opens the healer interaction menu and starts the input loop.
    *
-   * @param heros   The hero interacting with the healer.
-   * @param scanner The scanner used to read user input.
+   * @param heros   the non-null hero interacting with the healer.
+   * @param scanner the non-null scanner for user input.
+   * @throws NullPointerException if heros or scanner is null.
    */
   public static void ouvrir(Heros heros, Scanner scanner) {
-    boolean chezLeMedecin = true;
-    System.out.println("Bienvenue chez le guerisseur.");
-    while (chezLeMedecin) {
-      afficherMenu(heros);
+    Objects.requireNonNull(heros);
+    Objects.requireNonNull(scanner);
+    
+    System.out.println("Welcome to the healer's sanctuary.");
+    boolean interacting = true;
+    while (interacting) {
+      displayStatus(heros);
       String input = scanner.next().toUpperCase();
-      chezLeMedecin = traiterChoix(input, heros);
+      interacting = processChoice(input, heros);
     }
   }
 
-  /**
-   * Displays the healer menu, including the hero's current health, gold, and available healing options with their prices.
-   *
-   * @param heros The hero whose stats are displayed.
-   */
-  private static void afficherMenu(Heros heros) {
-    System.out.println("\n--- GUERISSEUR ---");
-    System.out.println("Santé : " + heros.getPv() + "/" + heros.getPvMax());
-    System.out.println("Solde : " + heros.getGold() + " Or");
-    System.out.println("CHOIX :");
-    System.out.println("  [1] Soin léger (+10 PV) - Coût : " + PRIX_SOIN_LEGER + " Or");
-    System.out.println("  [2] Soin complet (Max PV) - Coût : " + PRIX_SOIN_TOTAL + " Or");
-    System.out.println("  [Q] Quitter");
+  private static void displayStatus(Heros heros) {
+    System.out.println("\n--- HEALER ---");
+    System.out.println("Health: " + heros.getPv() + "/" + heros.getPvMax());
+    System.out.println("Gold: " + heros.getGold());
+    System.out.println("CHOICES:");
+    System.out.println("  [1] Light Heal (+" + LIGHT_HEAL_AMOUNT + " HP) - Cost: " + LIGHT_HEAL_PRICE);
+    System.out.println("  [2] Full Heal (Max HP) - Cost: " + FULL_HEAL_PRICE);
+    System.out.println("  [Q] Quit");
     System.out.print("> ");
   }
 
-  /**
-   * Processes the user's choice in the healer menu.
-   *
-   * @param input The user input string.
-   * @param heros The hero.
-   * @return {@code true} if the interaction should continue, {@code false} if the user wants to quit.
-   */
-  private static boolean traiterChoix(String input, Heros heros) {
-    if (input.equals("Q")) {
-      System.out.println("\"Prenez soin de vous...\"");
-      return false;
-    }
-    if (input.equals("1")) {
-      traiterSoinLeger(heros);
-    } else if (input.equals("2")) {
-      traiterSoinComplet(heros);
-    } else {
-      System.out.println("Commande inconnue.");
+  private static boolean processChoice(String input, Heros heros) {
+    switch (input) {
+      case "Q" -> {
+        System.out.println("\"Take care of yourself...\"");
+        return false;
+      }
+      case "1" -> performHeal(heros, LIGHT_HEAL_AMOUNT, LIGHT_HEAL_PRICE, "A soft light heals you.");
+      case "2" -> performHeal(heros, heros.getPvMax(), FULL_HEAL_PRICE, "You are fully restored!");
+      default -> System.out.println("Unknown command.");
     }
     return true;
   }
 
-  /**
-   * Handles the logic for the "Light Heal" option.
-   * Checks if the hero is already full health or has enough gold, then applies the heal.
-   *
-   * @param heros The hero attempting to heal.
-   */
-  private static void traiterSoinLeger(Heros heros) {
+  private static void performHeal(Heros heros, int amount, int price, String message) {
     if (heros.getPv() >= heros.getPvMax()) {
-      System.out.println("Vous êtes déjà en pleine forme.");
+      System.out.println("You are already at full health!");
       return;
     }
-    if (heros.payer(PRIX_SOIN_LEGER)) {
-      heros.soigner(10);
-      System.out.println("Une douce lumière vous soigne (+10 PV).");
+    
+    if (heros.payer(price)) {
+      heros.soigner(amount);
+      System.out.println(message);
     } else {
-      System.out.println("Vous n'avez pas assez d'argent.");
-    }
-  }
-
-  /**
-   * Handles the logic for the "Full Heal" option.
-   * Checks if the hero is already full health or has enough gold, then restores health to maximum.
-   *
-   * @param heros The hero attempting to heal.
-   */
-  private static void traiterSoinComplet(Heros heros) {
-    if (heros.getPv() >= heros.getPvMax()) {
-      System.out.println("Inutile, vous pétez la forme !");
-      return;
-    }
-    if (heros.payer(PRIX_SOIN_TOTAL)) {
-      int manque = heros.getPvMax() - heros.getPv();
-      heros.soigner(manque);
-      System.out.println("Vous êtes totalement rétabli !");
-    } else {
-      System.out.println("Revenez quand vous serez riche.");
+      System.out.println("You don't have enough gold.");
     }
   }
 }
