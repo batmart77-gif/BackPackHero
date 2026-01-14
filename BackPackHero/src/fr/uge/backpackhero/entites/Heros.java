@@ -179,7 +179,7 @@ public final class Heros {
   public int gainXp(int amount) {
     if (amount < 0) throw new IllegalArgumentException("XP négative");
     int levelsGained = 0;
-    this.currentXp += amount;     
+    this.currentXp += amount;
     while (this.currentXp >= this.xpToNextLevel) {
       levelUp();
       levelsGained++;

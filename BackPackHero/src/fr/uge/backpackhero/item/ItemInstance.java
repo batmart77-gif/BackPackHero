@@ -85,4 +85,21 @@ public class ItemInstance {
     public Position getPos() {
       return pos;
     }
+    
+    public int width() {
+      var shape = getCurrentShape();
+      if (shape.isEmpty()) return 0;
+      int maxCol = shape.stream().mapToInt(Position::column).max().getAsInt();
+      int minCol = shape.stream().mapToInt(Position::column).min().getAsInt();
+      return maxCol - minCol + 1;
+  }
+
+  public int height() {
+      var shape = getCurrentShape();
+      if (shape.isEmpty()) return 0;
+      int maxRow = shape.stream().mapToInt(Position::row).max().getAsInt();
+      int minRow = shape.stream().mapToInt(Position::row).min().getAsInt();
+      return maxRow - minRow + 1;
+  }
+    
 }

@@ -6,6 +6,7 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="resources"/>
 	<classpathentry kind="lib" path="include/zen-6.0.jar" sourcepath="include/zen-6.0-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/Martinez_KONATE_BackpackHero/include/zen-6.0-javadoc.jar!/"/>

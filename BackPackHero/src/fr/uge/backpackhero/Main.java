@@ -1,14 +1,14 @@
-/*
-package fr.uge.backpackhero;
 
+//package fr.uge.backpackhero;
+//
+//
+//public class Main {
+//    public static void main(String[] args) {
+//      TerminalController controller = new TerminalController();
+//      controller.run();
+//    }
+//}
 
-public class Main {
-    public static void main(String[] args) {
-      TerminalController controller = new TerminalController();
-      controller.run();
-    }
-}
-*/
 
 
 package fr.uge.backpackhero;

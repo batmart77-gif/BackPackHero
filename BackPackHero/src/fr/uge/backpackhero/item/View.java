@@ -345,6 +345,28 @@ public class View implements CombatInteractionDelegate {
       }
     }
   }
+  
+  public void reorganize() {
+    List<ItemInstance> items = backPack.removeAllItems(); // Utilise la méthode evacuate() vue précédemment
+    while (!items.isEmpty()) {
+        ItemInstance current = items.get(0);
+        displayItemFound(current);
+        System.out.println("Commandes : [r] Rotation, [ligne colonne] Position");
+        String input = readLine();
+
+        if ("r".equalsIgnoreCase(input)) {
+            current.rotate();
+        } else {
+            String[] p = input.split("\\s+");
+            if (p.length == 2 && isInteger(p[0].replace("-", "")) && isInteger(p[1].replace("-", ""))) {
+                Position pos = new Position(Integer.parseInt(p[0]), Integer.parseInt(p[1]));
+                if (isInside(pos.row(), pos.column()) && backPack.add(current, pos)) {
+                    items.remove(0);
+                } else System.err.println("❌ Position invalide ou occupée.");
+            } else System.err.println("❌ Commande invalide.");
+        }
+    }
+}
 
   /**
    * Checks whether the given coordinates are inside the backpack bounds.
@@ -358,13 +380,13 @@ public class View implements CombatInteractionDelegate {
   }
 
   /**
-   * Checks whether the given string represents a non-negative integer.
+   * Checks whether the given string represents a positive or a negative number.
    *
    * @param s the string to test
    * @return {@code true} if the string contains only digits, {@code false}
    *         otherwise
    */
   private boolean isInteger(String s) {
-    return s.matches("\\d+");
-  }
+    return s.matches("-?\\d+"); // Le -? permet de détecter un éventuel signe moins
+}
 }
