@@ -67,7 +67,7 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
     if (heros.depenserEnergie(cost)) {
       if (backpack.hasAdjacentItem(self, Item::isHeartGem)) {
         heros.soigner(1);
-        System.out.println("❤ La Gemme de Cœur réagit ! +1 PV");
+        System.out.println("La Gemme de Cœur réagit ! +1 PV");
       }
       int degatsDefaut = 2; 
       int realDamage = heros.calculateDamageOutput(degatsDefaut);   
