@@ -11,7 +11,7 @@ import fr.uge.backpackhero.entites.Heros;
  * Console-based interaction class responsible for handling all user input and
  * displaying the state of the {@code BackPack} and combat choices.
  */
-public class View implements CombatInteractionDelegate {
+public class View implements BackpackView, CombatInteractionDelegate {
   private final BackPack backPack;
   private final StuffFactory factory;
   private final Heros heros;

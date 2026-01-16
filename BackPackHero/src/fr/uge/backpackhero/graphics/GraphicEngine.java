@@ -2,16 +2,18 @@ package fr.uge.backpackhero.graphics;
 
 import com.github.forax.zen.*;
 import com.github.forax.zen.Event;
+import com.github.forax.zen.KeyboardEvent.Key;
 
 import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.Mode;
+import fr.uge.backpackhero.donjon.MerchantRoom;
 import fr.uge.backpackhero.donjon.Room;
 import fr.uge.backpackhero.entites.Ennemi;
 import fr.uge.backpackhero.item.*;
 import java.util.List;
-
+import java.util.Objects;
 import java.awt.*;
-
+ 
 public class GraphicEngine {
   private final Jeu jeu;
   private final ImageLoader img = new ImageLoader();
@@ -25,9 +27,12 @@ public class GraphicEngine {
   private int dungeonStartX, dungeonStartY;
   private int backpackStartX, backpackStartY;
 
-  public GraphicEngine(Jeu jeu) {
-    this.jeu = jeu;
-    this.viewGraphic = new ViewGraphic(jeu.getHeros().getBackpack(), new StuffFactory(), jeu.getHeros());
+  private String messageFlash = "";
+  private int messageTimer = 0;
+  
+  public GraphicEngine(Jeu jeu, ViewGraphic viewGraphic) {
+    this.jeu = Objects.requireNonNull(jeu);
+    this.viewGraphic = Objects.requireNonNull(viewGraphic);
   }
 
   public void start() {
@@ -41,9 +46,9 @@ public class GraphicEngine {
             context.dispose();
             return;
           }
-          handleInput(kb, context);
+          handleInput(kb);
           viewGraphic.handleKeyInput(kb);
-        }
+        } 
 
         if (event instanceof PointerEvent pe) {
           mouseX = pe.location().x();
@@ -61,6 +66,7 @@ public class GraphicEngine {
           renderDungeon(g, screenInfo);
           renderBackpack(g, screenInfo);
           renderHUD(g);
+          renderFlashMessage(g, screenInfo);
           renderControls(g, screenInfo);
 
           var floor = jeu.getDonjon().getCurrentFloor();
@@ -260,105 +266,185 @@ public class GraphicEngine {
     g.drawString("Quitter: ESC", centerX + 220, y + 30);
   }
 
-  private void handleInput(KeyboardEvent kb, ApplicationContext context) {
+  private void handleInput(KeyboardEvent kb) {
+    if (jeu.getMode() == Mode.PERDU || jeu.getMode() == Mode.GAGNE) return;
+
+    // 1. On récupère la touche
+    KeyboardEvent.Key key = kb.key();
+
+    // 2. Si un menu est ouvert (Malédiction, Inventaire, etc.)
     if (viewGraphic.getMode() != ViewGraphic.InteractionMode.NONE) {
-      return;
+      // On laisse ViewGraphic gérer les touches spécifiques aux menus
+      viewGraphic.handleKeyPress(key); 
+      return; // On arrête là pour ne pas déplacer le perso en même temps
     }
 
-    switch (kb.key()) {
-    case UP, Z -> jeu.deplacer(0, -1);
-    case DOWN, S -> jeu.deplacer(0, 1);
-    case LEFT, Q -> jeu.deplacer(-1, 0);
-    case RIGHT, D -> jeu.deplacer(1, 0);
-    case I -> {
-      System.out.println("=== INVENTAIRE ===");
-      jeu.getView().printBackPack();
-    }
-    case O -> {
-      viewGraphic.reorganize();
-    }
-    default -> {
-    }
+    // 3. Sinon, contrôles classiques
+    switch (key) {
+      case UP, Z -> jeu.deplacer(0, -1);
+      case DOWN, S -> jeu.deplacer(0, 1);
+      case LEFT, Q -> jeu.deplacer(-1, 0);
+      case RIGHT, D -> jeu.deplacer(1, 0);
+      case I -> jeu.getView().printBackPack();
+      case O -> viewGraphic.reorganize();
+      default -> { }
     }
   }
 
-  private void handleMouse(PointerEvent pe, ScreenInfo screenInfo) {
-    if (pe.action() != PointerEvent.Action.POINTER_DOWN)
-      return;
+  /**
+   * Main mouse event dispatcher. Splits logic to stay under 20 lines.
+   */
+  private void handleMouse(PointerEvent pe, ScreenInfo info) {
+    Objects.requireNonNull(pe);
+    if (jeu.getMode() == Mode.PERDU || jeu.getMode() == Mode.GAGNE) return;
+    if (pe.action() != PointerEvent.Action.POINTER_DOWN) return;
 
     int mx = pe.location().x();
     int my = pe.location().y();
 
-    if (viewGraphic.getMode() == ViewGraphic.InteractionMode.WAITING_POSITION
-        || viewGraphic.getMode() == ViewGraphic.InteractionMode.REORGANIZE
-        || viewGraphic.getMode() == ViewGraphic.InteractionMode.LEVEL_UP) {
+    // 1. Priorité aux interactions de placement/réorganisation
+    if (viewGraphic.getMode() != ViewGraphic.InteractionMode.NONE) {
       viewGraphic.handleMouseClick(mx, my, backpackStartX, backpackStartY);
       return;
     }
 
-    if (jeu.getMode() == Mode.COMBAT) {
-      handleCombatClick(mx, my, screenInfo);
-      return;
-    }
+    // 2. Délégation selon le mode actuel
+    handleContextualMouse(mx, my, info);
+  }
 
-    if (jeu.getMode() == Mode.BOUTIQUE) {
-      gererClicBoutique(mx, my);
-      return;
+  
+  private void handleContextualMouse(int mx, int my, ScreenInfo info) {
+    switch (jeu.getMode()) {
+      case COMBAT -> handleCombatClick(mx, my, info);
+      case BOUTIQUE -> gererClicBoutique(mx, my);
+      case SOIN -> handleHealerClick(mx, my, info);
+      default -> handleDungeonClick(mx, my);
     }
+  }
 
-    if (jeu.getMode() == Mode.SOIN) {
-      handleHealerClick(mx, my, screenInfo);
-      return;
-    }
-
+  
+  private void handleDungeonClick(int mx, int my) {
     var floor = jeu.getDonjon().getCurrentFloor();
     int col = (mx - dungeonStartX) / TILE_SIZE;
     int row = (my - dungeonStartY) / TILE_SIZE;
 
     if (col >= 0 && col < floor.width() && row >= 0 && row < floor.height()) {
       var room = floor.getRoom(col, row);
-
-      if (room != null) {
-        if (Math.abs(col - jeu.getX()) + Math.abs(row - jeu.getY()) <= 1) {
-          jeu.deplacer(col - jeu.getX(), row - jeu.getY());
-          room.onClick(jeu);
-        }
+      if (room != null && Math.abs(col - jeu.getX()) + Math.abs(row - jeu.getY()) <= 1) {
+        jeu.deplacer(col - jeu.getX(), row - jeu.getY());
+        room.onClick(jeu);
       }
     }
   }
 
   private void gererClicBoutique(int mx, int my) {
-    if (mx > 250 && mx < 330 && my > 350 && my < 430) {
-      System.out.println("Objet acheté graphiquement !");
+    int startX = 200;
+    int startY = 250;
+    
+    if (mx >= startX + 150 && mx <= startX + 350 && my >= startY + 310 && my <= startY + 350) {
+      jeu.setMode(Mode.EXPLORATION);
+      return;
+    }
+
+    // Vérifier d'abord si on clique sur un objet du marchand
+    if (detecterAchat(mx, my, startX, startY)) return;
+
+    // Sinon, vérifier si on clique sur un objet de NOTRE sac pour le vendre
+    detecterVente(mx, my);
+  }
+  
+  /**
+   * Detects if a mouse click is on a merchant's item.
+   * @return true if an item was clicked and purchase logic was triggered.
+   */
+  private boolean detecterAchat(int mx, int my, int startX, int startY) {
+    var room = jeu.getDonjon().getCurrentFloor().getRoom(jeu.getX(), jeu.getY());
+    if (room instanceof fr.uge.backpackhero.donjon.MerchantRoom merchant) {
+      var stock = merchant.stock();
+      for (int i = 0; i < stock.size(); i++) {
+        int itemX = startX + 50 + (i * 150);
+        int itemY = startY + 100;
+        if (mx >= itemX && mx <= itemX + 80 && my >= itemY && my <= itemY + 80) {
+          effectuerAchat(merchant, i);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  
+  private void effectuerAchat(MerchantRoom merchant, int index) {
+    ItemInstance item = merchant.stock().get(index);
+    int price = item.getItem().price();
+    
+    if (jeu.getHeros().payer(price)) {
+      merchant.stock().remove(index);
+      this.messageFlash = "Achat réussi ! Placez l'objet.";
+      this.messageTimer = 100;
+      
+      // Active le mode de placement dans le sac
+      viewGraphic.displayItemFound(item);
+      viewGraphic.attemptPlacement(item);
+    } else {
+      this.messageFlash = "Pas assez d'or !";
+      this.messageTimer = 100;
     }
   }
+  
+ 
+  private void detecterVente(int mx, int my) {
+    int col = (mx - backpackStartX) / TILE_SIZE;
+    int row = (my - backpackStartY) / TILE_SIZE;
+    var bp = jeu.getHeros().getBackpack();
+
+    if (col >= 0 && col < bp.getWidth() && row >= 0 && row < bp.getHeight()) {
+      bp.getItemAt(new Position(row, col)).ifPresent(this::procederVente);
+    }
+  }
+
+  
+  private void procederVente(ItemInstance item) {
+    int prixVente = item.getItem().price() / 2;
+    jeu.getHeros().getBackpack().removeItem(item);
+    jeu.getHeros().gagnerOr(prixVente);
+    
+    this.messageFlash = "Objet vendu pour " + prixVente + " Or !";
+    this.messageTimer = 100;
+  }
+
 
   private void handleHealerClick(int mx, int my, ScreenInfo screenInfo) {
-    int panelWidth = 300;
-    int startX = (screenInfo.width() - panelWidth) / 2;
+    int startX = (screenInfo.width() - 300) / 2;
     int startY = 200;
 
+    // Bouton 1 : Soin léger (Coût 5)
     if (mx >= startX + 50 && mx <= startX + 250 && my >= startY + 100 && my <= startY + 140) {
-      if (jeu.getHeros().getGold() >= 5) {
+      if (jeu.getHeros().getPv() < jeu.getHeros().getPvMax() && jeu.getHeros().payer(5)) {
         jeu.getHeros().soigner(10);
-        jeu.getHeros().payer(-5);
-        System.out.println("Soin léger effectué !");
-      } else {
-        System.out.println("Pas assez d'or !");
+        this.messageFlash = "Soin effectué !";
+      }else {
+        this.messageFlash = "Pas assez d'or !";
       }
+      this.messageTimer = 100;
     }
 
+    // Bouton 2 : Soin total (Coût 15)
     if (mx >= startX + 50 && mx <= startX + 250 && my >= startY + 200 && my <= startY + 240) {
-      if (jeu.getHeros().getGold() >= 15) {
+      if (jeu.getHeros().getPv() < jeu.getHeros().getPvMax() && jeu.getHeros().payer(15)) {
         jeu.getHeros().soigner(jeu.getHeros().getPvMax());
-        jeu.getHeros().payer(-15);
-        System.out.println("Soin total effectué !");
-      } else {
-        System.out.println("Pas assez d'or !");
+        this.messageFlash = "Soin total effectué !";
+      }else {
+        this.messageFlash = "Pas assez d'or !";
       }
+      this.messageTimer = 100;
+    }
+
+    // Bouton 3 : Quitter (Zone en bas du panneau)
+    if (mx >= startX + 50 && mx <= startX + 250 && my >= startY + 280 && my <= startY + 320) {
+      jeu.setMode(Mode.EXPLORATION);
     }
   }
-
+  
   private void drawButton(Graphics2D g, String text, int x, int y, int w, int h, Color c) {
     g.setColor(new Color(c.getRed(), c.getGreen(), c.getBlue(), 50));
     g.fillRect(x, y, w, h);
@@ -393,40 +479,101 @@ public class GraphicEngine {
 
   private void handleCombatClick(int mx, int my, ScreenInfo screenInfo) {
     var combat = jeu.getCombat();
-    if (combat == null)
-      return;
+    if (combat == null) return;
 
-    List<Ennemi> ennemis = combat.getAliveEnemies();
-    if (ennemis.isEmpty())
+    // 1. Bouton Fin de Tour
+    int btnX = (screenInfo.width() - 200) / 2;
+    if (mx >= btnX && mx <= btnX + 200 && my >= 520 && my <= 560) {
+      executerFinDeTour(combat);
       return;
+    }
 
-    int spacing = screenInfo.width() / (ennemis.size() + 1);
+    // 2. Objets du sac ou Clic sur Ennemi
+    if (detecterActionSacCombat(mx, my)) return;
+    detecterClicEnnemi(mx, my, screenInfo);
+  }
+  
+  /**
+   * Triggers the enemy turn and updates the visual state.
+   */
+  private void executerFinDeTour(fr.uge.backpackhero.combat.Combat combat) {
+    this.messageFlash = "Tour des ennemis...";
+    this.messageTimer = 60;
+    
+    // Exécute les actions des ennemis sur le héros
+    combat.startEnemyTurn(); 
+    
+    // Une fois le tour ennemi fini, le héros récupère son énergie/mana
+    jeu.getHeros().debuterTourCombat();
+    jeu.getHeros().rafraichirMana();
+    
+    jeu.updateCombatState();
+  }
+  
+  
+  private boolean detecterActionSacCombat(int mx, int my) {
+    int col = (mx - backpackStartX) / TILE_SIZE;
+    int row = (my - backpackStartY) / TILE_SIZE;
+    var bp = jeu.getHeros().getBackpack();
+
+    if (col >= 0 && col < bp.getWidth() && row >= 0 && row < bp.getHeight()) {
+      var itemOpt = bp.getItemAt(new Position(row, col));
+      if (itemOpt.isPresent()) {
+        tenterActionCombat(itemOpt.get());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Attempts to use an item and provides immediate visual feedback on the enemy's health.
+   */
+  private void tenterActionCombat(ItemInstance item) {
+    var combat = jeu.getCombat();
+    var target = combat.getAliveEnemies().get(0); 
+    int oldHp = target.getHp();
+
+    if (combat.tryHeroAction(item, target)) {
+      int damageDone = oldHp - target.getHp(); // Calcul des dégâts réels
+      this.messageFlash = "Utilisé " + item.getName() + " ! (-" + damageDone + " PV)";
+      jeu.updateCombatState();
+    } else {
+      this.messageFlash = "Énergie ou Mana insuffisant !";
+    }
+    this.messageTimer = 80;
+  }
+  
+  
+  private void detecterClicEnnemi(int mx, int my, ScreenInfo info) {
+    var ennemis = jeu.getCombat().getAliveEnemies();
+    int spacing = info.width() / (ennemis.size() + 1);
 
     for (int i = 0; i < ennemis.size(); i++) {
-      Ennemi e = ennemis.get(i);
       int x = (i + 1) * spacing - 64;
-      int y = 250;
-
-      // Zone cliquable élargie (image entière + zone du bouton)
-      if (mx >= x && mx <= x + 128 && my >= y - 30 && my <= y + 170) {
-        System.out.println("Clic détecté sur " + e.getName());
-        e.recevoirDegats(7);
-        System.out.println("BAM ! 7 dégâts infligés à " + e.getName() + " (HP: " + e.getHp() + ")");
-        jeu.updateCombatState();
+      if (mx >= x && mx <= x + 128 && my >= 220 && my <= 420) {
+        this.messageFlash = "Cible : " + ennemis.get(i).getName();
+        this.messageTimer = 60;
         return;
       }
     }
   }
+  
 
   private void renderGameOver(Graphics2D g, ScreenInfo screenInfo) {
     g.setColor(Color.BLACK);
     g.fillRect(0, 0, screenInfo.width(), screenInfo.height());
+    
     g.setColor(Color.RED);
     g.setFont(new Font("Serif", Font.BOLD, 48));
-    FontMetrics fm = g.getFontMetrics();
     String text = "VOUS ÊTES MORT";
-    int x = (screenInfo.width() - fm.stringWidth(text)) / 2;
-    g.drawString(text, x, screenInfo.height() / 2);
+    g.drawString(text, (screenInfo.width() - g.getFontMetrics().stringWidth(text)) / 2, 250);
+    
+    int score = jeu.getHeros().calculateFinalScore();
+    g.setFont(new Font("Arial", Font.BOLD, 24));
+    g.setColor(Color.WHITE);
+    String scoreText = "Score Final : " + score;
+    g.drawString(scoreText, (screenInfo.width() - g.getFontMetrics().stringWidth(scoreText)) / 2, 350);
   }
 
   private void renderVictory(Graphics2D g, ScreenInfo screenInfo) {
@@ -442,103 +589,145 @@ public class GraphicEngine {
 
   private void renderCombatUI(Graphics2D g, ScreenInfo screenInfo) {
     var combat = jeu.getCombat();
-    if (combat == null)
-      return;
+    if (combat == null) return;
 
     g.setColor(new Color(0, 0, 0, 180));
-    g.fillRect(0, 0, screenInfo.width(), 600);
+    g.fillRect(0, 0, screenInfo.width(), 600); // Combat panel background
 
-    List<Ennemi> ennemis = combat.getAliveEnemies();
-    int spacing = screenInfo.width() / (ennemis.size() + 1);
+    renderEnemies(g, combat.getAliveEnemies(), screenInfo);
 
-    for (int i = 0; i < ennemis.size(); i++) {
-      Ennemi e = ennemis.get(i);
-      int x = (i + 1) * spacing - 64;
-      int y = 250;
-
-      g.drawImage(img.getImage(e.getName()), x, y, 128, 128, null);
-      renderEnemyHealthBar(g, e, x, y - 30);
-
-      g.setFont(new Font("Arial", Font.BOLD, 14));
-      g.setColor(Color.WHITE);
-      g.drawString(e.getName(), x + 20, y - 40);
-      g.drawString("HP: " + e.getHp() + "/" + e.getMaxHp(), x + 20, y + 150);
-
-      // Toujours afficher le bouton quand la souris survole l'ennemi
-      if (mouseX >= x && mouseX <= x + 128 && mouseY >= y - 30 && mouseY <= y + 170) {
-        drawAttackButton(g, x + 14, y + 45);
-      }
-    }
-
-    // Instructions
-    g.setFont(new Font("Arial", Font.PLAIN, 16));
-    g.setColor(Color.YELLOW);
-    g.drawString("Cliquez sur un ennemi pour attaquer !", screenInfo.width() / 2 - 150, 150);
+    // Bouton Fin de Tour positionné au centre bas du panneau de combat
+    int btnX = (screenInfo.width() - 200) / 2;
+    drawButton(g, "Fin de Tour", btnX, 520, 200, 40, Color.RED);
   }
 
+  /**
+   * Renders the list of alive enemies, spacing them across the screen.
+   * @param g the graphics context.
+   * @param ennemis the list of enemies to display.
+   * @param info the screen information for positioning.
+   */
+  private void renderEnemies(Graphics2D g, List<Ennemi> ennemis, ScreenInfo info) {
+    Objects.requireNonNull(ennemis);
+    int spacing = info.width() / (ennemis.size() + 1);
+    for (int i = 0; i < ennemis.size(); i++) {
+      // Calcule la position X pour centrer les ennemis
+      drawEnemyCombat(g, ennemis.get(i), (i + 1) * spacing - 64, 250);
+    }
+  }
+
+  /**
+   * Draws an enemy with its intention, health bar, and active status effects.
+   * @param g the graphics context.
+   * @param e the enemy instance.
+   * @param x x-coordinate for the sprite.
+   * @param y y-coordinate for the sprite.
+   */
+  private void drawEnemyCombat(Graphics2D g, Ennemi e, int x, int y) {
+    Objects.requireNonNull(e);
+    // Sprite and Health
+    g.drawImage(img.getImage(e.getName()), x, y, 128, 128, null);
+    renderEnemyHealthBar(g, e, x, y - 30);
+    
+    // New: Intent and Status
+    renderEnemyIntent(g, e, x, y);
+    renderEnemyStatus(g, e, x, y);
+
+    // Attack button on hover
+    if (mouseX >= x && mouseX <= x + 128 && mouseY >= y - 30 && mouseY <= y + 170) {
+      drawAttackButton(g, x + 14, y + 45);
+    }
+  }
+  
+  /**
+   * Displays active status effects (Poison, Burn, etc.) next to the enemy.
+   */
+  private void renderEnemyStatus(Graphics2D g, Ennemi e, int x, int y) {
+    int offset = 0;
+    g.setFont(new Font("Arial", Font.BOLD, 12));
+    for (fr.uge.backpackhero.combat.Effect effect : fr.uge.backpackhero.combat.Effect.values()) {
+      int stacks = e.getStatus(effect);
+      if (stacks > 0) {
+        g.setColor(getColorForEffect(effect));
+        g.drawString(effect.getNom() + " : " + stacks, x + 135, y + 20 + offset);
+        offset += 15;
+      }
+    }
+  }
+
+  private Color getColorForEffect(fr.uge.backpackhero.combat.Effect effect) {
+    return switch (effect) {
+      case POISON -> Color.GREEN;
+      case BURN -> Color.ORANGE;
+      case DODGE -> Color.WHITE;
+      default -> Color.MAGENTA;
+    };
+  }
+  /**
+   * Renders the enemy's planned action (intent) as a text bubble.
+   */
+  private void renderEnemyIntent(Graphics2D g, Ennemi e, int x, int y) {
+    var action = e.getActionAnnoncee();
+    if (action != null) {
+      g.setFont(new Font("Arial", Font.ITALIC, 12));
+      g.setColor(Color.YELLOW);
+      // Positionné juste au-dessus de la barre de vie
+      g.drawString("Intention : " + action.description(), x, y - 45);
+    }
+  }
+ 
   private void renderHealerUI(Graphics2D g, ScreenInfo screenInfo) {
-    int panelWidth = 300;
-    int panelHeight = 350;
-    int startX = (screenInfo.width() - panelWidth) / 2;
+    int startX = (screenInfo.width() - 300) / 2;
     int startY = 200;
 
     g.setColor(new Color(20, 20, 20, 240));
-    g.fillRoundRect(startX, startY, panelWidth, panelHeight, 15, 15);
-    g.setColor(new Color(255, 100, 100));
+    g.fillRoundRect(startX, startY, 300, 350, 15, 15);
+    g.setColor(new Color(255, 100, 100)); // Bordure rouge
     g.setStroke(new BasicStroke(3));
-    g.drawRoundRect(startX, startY, panelWidth, panelHeight, 15, 15);
+    g.drawRoundRect(startX, startY, 300, 350, 15, 15);
 
     g.setFont(new Font("Serif", Font.BOLD, 24));
     g.setColor(Color.WHITE);
     g.drawString("Le Guérisseur", startX + 70, startY + 50);
 
-    drawButton(g, "Soin Léger (+10 PV)", startX + 50, startY + 100, 200, 40, Color.GREEN);
-    g.setFont(new Font("Arial", Font.PLAIN, 14));
-    g.drawString("Coût : 5 Or", startX + 100, startY + 160);
-
-    drawButton(g, "Soin Total (MAX)", startX + 50, startY + 200, 200, 40, Color.CYAN);
-    g.drawString("Coût : 15 Or", startX + 100, startY + 260);
-
-    g.setFont(new Font("Arial", Font.PLAIN, 12));
-    g.setColor(Color.WHITE);
-    g.drawString("Cliquez sur un bouton pour acheter", startX + 50, startY + 320);
+    // Boutons d'interaction
+    drawButton(g, "Soin Léger (5 Or)", startX + 50, startY + 100, 200, 40, Color.GREEN);
+    drawButton(g, "Soin Total (15 Or)", startX + 50, startY + 200, 200, 40, Color.CYAN);
+    drawButton(g, "Quitter", startX + 50, startY + 280, 200, 40, Color.GRAY);
   }
+  
 
   private void renderMerchantUI(Graphics2D g, fr.uge.backpackhero.donjon.MerchantRoom room) {
-    int winW = 500;
-    int winH = 300;
     int startX = 200;
     int startY = 250;
-
     g.setColor(new Color(0, 0, 0, 220));
-    g.fillRoundRect(startX, startY, winW, winH, 20, 20);
-    g.setColor(new Color(212, 175, 55));
+    g.fillRoundRect(startX, startY, 500, 380, 20, 20); // Fond
+    g.setColor(new Color(212, 175, 55)); // Bordure Or
     g.setStroke(new BasicStroke(3));
-    g.drawRoundRect(startX, startY, winW, winH, 20, 20);
+    g.drawRoundRect(startX, startY, 500, 380, 20, 20);
 
     g.setFont(new Font("Serif", Font.BOLD, 30));
     g.setColor(Color.WHITE);
-    g.drawString("--- Boutique du Marchand ---", startX + 60, startY + 50);
+    g.drawString("Boutique du Marchand", startX + 100, startY + 50);
 
     var stock = room.stock();
     for (int i = 0; i < stock.size(); i++) {
-      var item = stock.get(i);
-      int itemX = startX + 50 + (i * 150);
-      int itemY = startY + 100;
-
-      String fileName = item.getItem().name().replace(" ", "_");
-      g.drawImage(img.getImage(fileName), itemX, itemY, 80, 80, null);
-
-      g.setFont(new Font("Arial", Font.BOLD, 18));
-      g.setColor(Color.YELLOW);
-      g.drawString("10 Or", itemX + 15, itemY + 110);
+      renderStoreItem(g, stock.get(i), startX + 50 + (i * 150), startY + 100);
     }
-
     g.setFont(new Font("Arial", Font.ITALIC, 14));
-    g.setColor(Color.WHITE);
-    g.drawString("Cliquez sur un objet pour acheter", startX + 130, startY + 270);
+    g.setColor(Color.LIGHT_GRAY);
+    g.drawString("Astuce : Cliquez sur un objet de votre sac pour le vendre (50% du prix)", startX + 40, startY + 270);
+    drawButton(g, "Quitter la boutique", startX + 150, startY + 310, 200, 40, Color.GRAY);
   }
 
+  private void renderStoreItem(Graphics2D g, ItemInstance item, int x, int y) {
+    String fileName = item.getItem().name().replace(" ", "_");
+    g.drawImage(img.getImage(fileName), x, y, 80, 80, null);
+    g.setFont(new Font("Arial", Font.BOLD, 18));
+    g.setColor(Color.YELLOW);
+    g.drawString(item.getItem().price() + " Or", x + 10, y + 110);
+  }
+  
   private void drawItem(Graphics2D g, ItemInstance item, int px, int py, int cellSize) {
     String name = item.getItem().name().replace(" ", "_");
     Image imgFile = img.getImage(name);
@@ -571,4 +760,20 @@ public class GraphicEngine {
   public ViewGraphic getViewGraphic() {
     return viewGraphic;
   }
+ 
+  private void renderFlashMessage(Graphics2D g, ScreenInfo info) {
+    if (messageTimer > 0) {
+      g.setFont(new Font("Arial", Font.BOLD, 22));
+      int alpha = Math.min(255, messageTimer * 5);
+      g.setColor(new Color(255, 50, 50, alpha));
+      
+      FontMetrics fm = g.getFontMetrics();
+      int x = (info.width() - fm.stringWidth(messageFlash)) / 2;
+      g.drawString(messageFlash, x, 90); 
+      
+      messageTimer--; 
+    }
+  }
+ 
+  
 }

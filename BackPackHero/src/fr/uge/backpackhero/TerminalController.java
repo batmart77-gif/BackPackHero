@@ -42,9 +42,11 @@ public final class TerminalController {
   public TerminalController() {
     Dungeon dungeon = DungeonGenerator.createDungeonPhase3();
     View view = new View(heros.getBackpack(), new StuffFactory(), heros);
-    this.jeu = new Jeu(heros, dungeon, view);
+    
+    // On passe la vue deux fois également
+    this.jeu = new Jeu(heros, dungeon, view, view);
     initialiserEquipement();
-  }
+}
 
   /**
    * Provides the hero with basic starting equipment in the backpack.

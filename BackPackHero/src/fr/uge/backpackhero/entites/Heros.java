@@ -175,4 +175,9 @@ public final class Heros {
     if (energy >= cost) { this.energy -= cost; return true; }
     return false;
   }
+  
+  public void takeDamage(int amount) {
+    this.hp = Math.max(0, this.hp - amount);
+    
+}
 }
