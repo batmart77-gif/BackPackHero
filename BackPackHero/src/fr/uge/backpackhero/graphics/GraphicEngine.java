@@ -41,13 +41,24 @@ public class GraphicEngine {
         Event event = context.pollEvent();
 
         if (event instanceof KeyboardEvent kb && kb.action() == KeyboardEvent.Action.KEY_PRESSED) {
-          // Gérer ESCAPE en priorité
-          if (kb.key() == KeyboardEvent.Key.ESCAPE) {
-            context.dispose();
-            return;
+          var key = kb.key();
+
+          // Si un menu est actif (placement, réorganisation, etc.)
+          if (viewGraphic.getMode() != ViewGraphic.InteractionMode.NONE) {
+              if (key == KeyboardEvent.Key.ESCAPE) {
+                  // On envoie l'info à ViewGraphic au lieu de fermer le jeu
+                  viewGraphic.handleKeyPress(key); 
+                  // On utilise 'continue' pour sauter la suite et ne pas fermer l'appli
+                  continue; 
+              }
+          } else {
+              // Si aucun menu n'est ouvert, ESCAPE ferme l'application normalement
+              if (key == KeyboardEvent.Key.ESCAPE) {
+                  context.dispose();
+                  return;
+              }
           }
           handleInput(kb);
-          viewGraphic.handleKeyInput(kb);
         } 
 
         if (event instanceof PointerEvent pe) {
@@ -95,11 +106,26 @@ public class GraphicEngine {
               
               g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
               
-              // On dessine l'item au niveau de la souris
-              // On décale de -32 pour que la souris soit au centre de la première case
-              drawItem(g, itemToShow, mouseX - 32, mouseY - 32, TILE_SIZE);
+              int col = (mouseX - backpackStartX) / TILE_SIZE;
+              int row = (mouseY - backpackStartY) / TILE_SIZE;
+              
+              int drawX, drawY;
+              if (col >= 0 && col < jeu.getHeros().getBackpack().getWidth() && row >= 0 && row < jeu.getHeros().getBackpack().getHeight()) {
+                drawX = backpackStartX + col * TILE_SIZE;
+                drawY = backpackStartY + row * TILE_SIZE;
+              } else {
+                // Sinon, il suit librement la souris
+                drawX = mouseX - 32;
+                drawY = mouseY - 32;
+              }
+              
+              drawItem(g, itemToShow, drawX, drawY, TILE_SIZE);
               
               g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+              
+              g.setColor(new Color(255, 50, 50, 200));
+              g.setFont(new Font("Arial", Font.BOLD, 16));
+              g.drawString("ESC pour LAISSER l'objet au sol", mouseX + 40, mouseY + 20);
           }
         });
 
@@ -404,7 +430,7 @@ public class GraphicEngine {
 
   
   private void procederVente(ItemInstance item) {
-    int prixVente = item.getItem().price() / 2;
+    int prixVente = item.getItem().price();
     jeu.getHeros().getBackpack().removeItem(item);
     jeu.getHeros().gagnerOr(prixVente);
     
@@ -531,18 +557,31 @@ public class GraphicEngine {
    */
   private void tenterActionCombat(ItemInstance item) {
     var combat = jeu.getCombat();
-    var target = combat.getAliveEnemies().get(0); 
+    var enemies = combat.getAliveEnemies();
+    if (enemies.isEmpty()) return;
+    var target = enemies.get(0); 
     int oldHp = target.getHp();
-
+    int oldArmor = jeu.getHeros().getProtection();
     if (combat.tryHeroAction(item, target)) {
-      int damageDone = oldHp - target.getHp(); // Calcul des dégâts réels
-      this.messageFlash = "Utilisé " + item.getName() + " ! (-" + damageDone + " PV)";
-      jeu.updateCombatState();
+        int damageDone = oldHp - target.getHp();
+        int armorGained = jeu.getHeros().getProtection() - oldArmor;
+        if (damageDone > 0) this.messageFlash = "Dégâts infligés : -" + damageDone + " PV";
+        else if (armorGained > 0) this.messageFlash = "Bouclier : +" + armorGained + " 🛡️";
+        else this.messageFlash = "Action réussie !";
+        if (combat.getState() == fr.uge.backpackhero.combat.CombatState.WIN) {
+            this.messageFlash = "VICTOIRE !";
+            this.messageTimer = 120;
+            List<ItemInstance> loot = combat.finishCombat();
+            jeu.setMode(fr.uge.backpackhero.Mode.EXPLORATION);
+            if (!loot.isEmpty()) {
+                viewGraphic.displayItemFound(loot.get(0));
+            }
+        }
     } else {
-      this.messageFlash = "Énergie ou Mana insuffisant !";
+        this.messageFlash = "Énergie ou Mana insuffisant !";
     }
     this.messageTimer = 80;
-  }
+}
   
   
   private void detecterClicEnnemi(int mx, int my, ScreenInfo info) {
@@ -716,7 +755,7 @@ public class GraphicEngine {
     }
     g.setFont(new Font("Arial", Font.ITALIC, 14));
     g.setColor(Color.LIGHT_GRAY);
-    g.drawString("Astuce : Cliquez sur un objet de votre sac pour le vendre (50% du prix)", startX + 40, startY + 270);
+    g.drawString("Astuce : Cliquez sur un objet de votre sac pour le vendre", startX + 40, startY + 270);
     drawButton(g, "Quitter la boutique", startX + 150, startY + 310, 200, 40, Color.GRAY);
   }
 
@@ -731,31 +770,29 @@ public class GraphicEngine {
   private void drawItem(Graphics2D g, ItemInstance item, int px, int py, int cellSize) {
     String name = item.getItem().name().replace(" ", "_");
     Image imgFile = img.getImage(name);
-    if (imgFile == null)
-      return;
+    if (imgFile == null) return;
 
-    // On calcule la taille de l'item non tourné (sa forme de base)
-    // pour que l'image ne soit pas déformée
     var baseShape = item.getItem().shapeAtRotation(0);
     int baseW = baseShape.stream().mapToInt(Position::column).max().getAsInt() + 1;
     int baseH = baseShape.stream().mapToInt(Position::row).max().getAsInt() + 1;
 
     var oldTransform = g.getTransform();
-
-    // 1. On se place sur la case
     g.translate(px, py);
 
-    // 2. Si l'objet est tourné, on applique la rotation visuelle
-    if (item.getRotationAngle() != 0) {
-      // On tourne autour du centre de la première case
-      g.rotate(Math.toRadians(item.getRotationAngle()), cellSize / 2.0, cellSize / 2.0);
+    int angle = item.getRotationAngle();
+    if (angle != 0) {
+        // On tourne autour du centre de la première case
+        g.rotate(Math.toRadians(angle), cellSize / 2.0, cellSize / 2.0);
+        
+        // On décale l'image pour qu'elle reste alignée sur la grille logique
+        if (angle == 90)  g.translate(0, -baseH * cellSize + cellSize);
+        if (angle == 180) g.translate(-baseW * cellSize + cellSize, -baseH * cellSize + cellSize);
+        if (angle == 270) g.translate(-baseW * cellSize + cellSize, 0);
     }
 
-    // 3. On dessine avec les dimensions de base
     g.drawImage(imgFile, 0, 0, baseW * cellSize, baseH * cellSize, null);
-
     g.setTransform(oldTransform);
-  }
+}
 
   public ViewGraphic getViewGraphic() {
     return viewGraphic;

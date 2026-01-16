@@ -76,18 +76,7 @@ public class ViewGraphic implements CombatInteractionDelegate {
   public boolean interactBeforePlacement(ItemInstance item) {
     this.currentItem = item;
     this.mode = InteractionMode.ITEM_PLACEMENT;
-    try {
-      UserAction action = actionQueue.take();
-      return switch (action.type) {
-        case PLACE -> true;
-        case QUIT -> false;
-        case ROTATE -> { item.rotate(); yield interactBeforePlacement(item); }
-        case REMOVE -> false;
-      };
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      return false;
-    }
+     return true;
   }
 
   @Override public void handleForcedCurse(Heros h, Curse c) { this.mode = InteractionMode.FORCED_CURSE; this.currentItem = new ItemInstance(c); }
@@ -179,6 +168,13 @@ public class ViewGraphic implements CombatInteractionDelegate {
   private enum ActionType { PLACE, QUIT, ROTATE, REMOVE }
   private record UserAction(ActionType type) {}
   
+  private void abandonnerItem() {
+    this.mode = InteractionMode.NONE;
+    this.currentItem = null;
+    // Si on était en train de réorganiser, on arrête tout
+    this.itemsToReorganize.clear();
+}
+  
   /**
    * MÉTHODE CORRIGÉE : Correspond maintenant à l'appel de GraphicEngine.
    * @param key La touche pressée récupérée depuis KeyboardEvent.key()
@@ -188,9 +184,9 @@ public class ViewGraphic implements CombatInteractionDelegate {
     switch (mode) {
       case ITEM_PLACEMENT -> {
         // Rappel : On utilise 'A' pour valider et éviter les bugs de touche ENTER
-        if (key == KeyboardEvent.Key.A) actionQueue.offer(new UserAction(ActionType.PLACE));
-        else if (key == KeyboardEvent.Key.R) actionQueue.offer(new UserAction(ActionType.ROTATE));
-        else if (key == KeyboardEvent.Key.ESCAPE) actionQueue.offer(new UserAction(ActionType.QUIT));
+        if (key == KeyboardEvent.Key.A) this.mode = InteractionMode.WAITING_POSITION;
+        else if (key == KeyboardEvent.Key.R) if (currentItem != null) currentItem.rotate();
+        else if (key == KeyboardEvent.Key.ESCAPE) {abandonnerItem();}
       }
       case FORCED_CURSE -> {
         if (key == KeyboardEvent.Key.A) acceptForcedCurse();
@@ -198,7 +194,7 @@ public class ViewGraphic implements CombatInteractionDelegate {
       }
       case WAITING_POSITION, REORGANIZE -> {
         if (key == KeyboardEvent.Key.R && currentItem != null) currentItem.rotate();
-        else if (key == KeyboardEvent.Key.ESCAPE) mode = InteractionMode.NONE;
+        else if (key == KeyboardEvent.Key.ESCAPE) { mode = InteractionMode.NONE; this.currentItem = null;}
       }
       default -> {}
     }
