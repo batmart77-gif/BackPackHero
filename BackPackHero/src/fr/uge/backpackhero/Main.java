@@ -32,7 +32,7 @@ public final class Main {
     Heros heros = new Heros();
     Dungeon dungeon = DungeonGenerator.createDungeonPhase3();
     StuffFactory factory = new StuffFactory();    
-    ViewGraphic viewGraphic = new ViewGraphic(heros.getBackpack(), factory, heros);
+    ViewGraphic viewGraphic = new ViewGraphic(heros.getBackpack(), heros);
     Jeu jeu = new Jeu(heros, dungeon, viewGraphic, viewGraphic);
     setupInitialInventory(heros, factory);
     HallOfFame hof = new HallOfFame();

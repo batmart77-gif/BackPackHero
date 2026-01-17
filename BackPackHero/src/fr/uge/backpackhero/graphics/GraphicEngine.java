@@ -9,13 +9,16 @@ import fr.uge.backpackhero.data.ScoreEntry;
 import fr.uge.backpackhero.donjon.MerchantRoom;
 import fr.uge.backpackhero.donjon.Room;
 import fr.uge.backpackhero.entites.Ennemi;
+import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.item.*;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.awt.*;
 
 /**
- * Main graphical engine for rendering the game world and handling user interactions.
+ * Main graphical engine for rendering the game world and handling user
+ * interactions.
  */
 public class GraphicEngine {
   private final Jeu jeu;
@@ -29,12 +32,13 @@ public class GraphicEngine {
 
   private String messageFlash = "";
   private int messageTimer = 0;
-  
+
   private final HallOfFame hof;
 
   /**
    * Constructs the engine.
-   * @param jeu the game state controller.
+   * 
+   * @param jeu         the game state controller.
    * @param viewGraphic the interaction view manager.
    */
   public GraphicEngine(Jeu jeu, ViewGraphic viewGraphic, HallOfFame hof) {
@@ -58,8 +62,8 @@ public class GraphicEngine {
   }
 
   /**
-   * Handles the mandatory InterruptedException for Thread.sleep.
-   * This is the only 'try' allowed outside of Main due to API constraints.
+   * Handles the mandatory InterruptedException for Thread.sleep. This is the only
+   * 'try' allowed outside of Main due to API constraints.
    */
   private void waitForNextFrame() {
     try {
@@ -121,24 +125,24 @@ public class GraphicEngine {
     var floor = jeu.getDonjon().getCurrentFloor();
     var currentRoom = floor.getRoom(jeu.getX(), jeu.getY());
     switch (jeu.getMode()) {
-      case BOUTIQUE -> {
-        if (currentRoom instanceof MerchantRoom merchant) renderMerchantUI(g, merchant);
-      }
-      case SOIN -> renderHealerUI(g, screenInfo);
-      case COMBAT -> renderCombatUI(g, screenInfo);
-      case PERDU -> renderGameOver(g, screenInfo);
-      case GAGNE -> renderVictory(g, screenInfo);
-      default -> {}
+    case BOUTIQUE -> {
+      if (currentRoom instanceof MerchantRoom merchant)
+        renderMerchantUI(g, merchant);
+    }
+    case SOIN -> renderHealerUI(g, screenInfo);
+    case COMBAT -> renderCombatUI(g, screenInfo);
+    case PERDU -> renderGameOver(g, screenInfo);
+    case GAGNE -> renderVictory(g, screenInfo);
+    default -> {
+    }
     }
   }
 
   private void calculatePositions(ScreenInfo screenInfo) {
-    var floor = jeu.getDonjon().getCurrentFloor();
-    var bp = jeu.getHeros().getBackpack();
-    dungeonStartX = (screenInfo.width() - (floor.width() * TILE_SIZE)) / 2;
-    dungeonStartY = 100;
-    backpackStartX = screenInfo.width() - (bp.getWidth() * TILE_SIZE) - 50;
-    backpackStartY = 150;
+    dungeonStartX = 80;
+    dungeonStartY = 150;
+    backpackStartX = screenInfo.width() - 450;
+    backpackStartY = 250;
   }
 
   private void renderBackground(Graphics2D g, ScreenInfo info) {
@@ -192,31 +196,58 @@ public class GraphicEngine {
     renderBackpackGrid(g, bp);
     bp.getItems().forEach(item -> {
       if (item.getPos() != null) {
-        drawItem(g, item, backpackStartX + item.getPos().column() * TILE_SIZE, 
-                 backpackStartY + item.getPos().row() * TILE_SIZE, TILE_SIZE);
+        drawItem(g, item, backpackStartX + item.getPos().column() * TILE_SIZE,
+            backpackStartY + item.getPos().row() * TILE_SIZE, TILE_SIZE);
       }
     });
     drawBackpackHover(g, bp);
   }
 
-  private void renderBackpackGrid(Graphics2D g, BackPack bp) {
-    for (int r = 0; r < bp.getHeight(); r++) {
-      for (int c = 0; c < bp.getWidth(); c++) {
-        int px = backpackStartX + c * TILE_SIZE;
-        int py = backpackStartY + r * TILE_SIZE;
-        boolean unlocked = bp.getUnlockedTiles().contains(new Position(r, c));
-        g.setColor(unlocked ? new Color(255, 255, 255, 40) : new Color(50, 50, 50, 150));
-        g.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-        g.setColor(new Color(255, 255, 255, 100));
-        g.drawRect(px, py, TILE_SIZE, TILE_SIZE);
+  private void renderEligibleTiles(Graphics2D g, int minR, int maxR, int minC, int maxC, Set<Position> unlocked) {
+    g.setColor(new Color(255, 255, 0, 80));
+    for (int r = minR - 1; r <= maxR + 1; r++) {
+      for (int c = minC - 1; c <= maxC + 1; c++) {
+        Position p = new Position(r, c);
+        if (!unlocked.contains(p) && hasAdjacent(p, unlocked)) {
+          int px = backpackStartX + (c * TILE_SIZE);
+          int py = backpackStartY + (r * TILE_SIZE);
+          g.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          g.drawRect(px, py, TILE_SIZE, TILE_SIZE);
+        }
       }
     }
+  }
+
+  private boolean hasAdjacent(Position pos, Set<Position> unlocked) {
+    return unlocked.stream().anyMatch(u -> Math.abs(u.row() - pos.row()) + Math.abs(u.column() - pos.column()) == 1);
+  }
+
+  private void renderBackpackGrid(Graphics2D g, BackPack bp) {
+    var unlocked = bp.getUnlockedTiles();
+    int minR = unlocked.stream().mapToInt(Position::row).min().orElse(0);
+    int maxR = unlocked.stream().mapToInt(Position::row).max().orElse(0);
+    int minC = unlocked.stream().mapToInt(Position::column).min().orElse(0);
+    int maxC = unlocked.stream().mapToInt(Position::column).max().orElse(0);
+    for (int r = minR; r <= maxR; r++) {
+      for (int c = minC; c <= maxC; c++) {
+        int px = backpackStartX + (c * TILE_SIZE);
+        int py = backpackStartY + (r * TILE_SIZE);
+        if (unlocked.contains(new Position(r, c))) {
+          g.setColor(new Color(255, 255, 255, 40));
+          g.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          g.setColor(new Color(255, 255, 255, 100));
+          g.drawRect(px, py, TILE_SIZE, TILE_SIZE);
+        }
+      }
+    }
+    if (viewGraphic.getMode() == ViewGraphic.InteractionMode.LEVEL_UP)
+      renderEligibleTiles(g, minR, maxR, minC, maxC, unlocked);
   }
 
   private void drawBackpackHover(Graphics2D g, BackPack bp) {
     int hc = (mouseX - backpackStartX) / TILE_SIZE;
     int hr = (mouseY - backpackStartY) / TILE_SIZE;
-    if (hc >= 0 && hc < bp.getWidth() && hr >= 0 && hr < bp.getHeight()) {
+    if (bp.getUnlockedTiles().contains(new Position(hr, hc))) {
       g.setColor(new Color(100, 200, 255, 100));
       g.setStroke(new BasicStroke(2));
       g.drawRect(backpackStartX + hc * TILE_SIZE, backpackStartY + hr * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -225,16 +256,52 @@ public class GraphicEngine {
 
   private void renderHUD(Graphics2D g) {
     var h = jeu.getHeros();
+
+    renderHealthBar(g, h);
+    renderExperienceBar(g, h);
+    renderHeroStats(g, h);
+  }
+
+  private void renderHealthBar(Graphics2D g, Heros h) {
     g.setColor(new Color(50, 50, 50));
-    g.fillRect(50, 30, 250, 25);
-    float ratio = (float) h.getPv() / h.getPvMax();
-    g.setColor(ratio > 0.3 ? new Color(46, 204, 113) : new Color(231, 76, 60));
-    g.fillRect(50, 30, (int) (250 * ratio), 25);
+    g.fillRect(50, 30, 250, 20);
+
+    float hpRatio = (float) h.getPv() / h.getPvMax();
+    g.setColor(hpRatio > 0.3 ? new Color(46, 204, 113) : new Color(231, 76, 60));
+    g.fillRect(50, 30, (int) (250 * hpRatio), 20);
+
     g.setColor(Color.WHITE);
-    g.drawRect(50, 30, 250, 25);
-    g.drawString("HP: " + h.getPv() + " / " + h.getPvMax(), 120, 48);
-    g.drawString("Gold: " + h.getGold(), 350, 48);
-    g.drawString("Floor: " + jeu.getDonjon().getFloorNumber(), 500, 48);
+    g.drawRect(50, 30, 250, 20);
+    g.setFont(new Font("Arial", Font.BOLD, 12));
+    g.drawString("HP: " + h.getPv() + "/" + h.getPvMax(), 60, 45);
+  }
+
+  private void renderExperienceBar(Graphics2D g, Heros h) {
+    float xpRatio = (float) h.getXp() / h.getXpToNextLevel();
+
+    g.setColor(new Color(30, 30, 30));
+    g.fillRect(50, 52, 250, 8);
+
+    g.setColor(new Color(52, 152, 219));
+    g.fillRect(50, 52, (int) (250 * xpRatio), 8);
+
+    g.setColor(Color.WHITE);
+    g.drawRect(50, 52, 250, 8);
+  }
+
+  private void renderHeroStats(Graphics2D g, Heros h) {
+    g.setFont(new Font("Arial", Font.BOLD, 16));
+    g.setColor(Color.YELLOW);
+    g.drawString("LEVEL " + h.getLevel(), 50, 85);
+
+    g.setFont(new Font("Arial", Font.PLAIN, 14));
+    g.setColor(Color.WHITE);
+    g.drawString("Gold: " + h.getGold(), 160, 85);
+
+    if (h.getProtection() > 0) {
+      g.setColor(Color.CYAN);
+      g.drawString("Shield: " + h.getProtection(), 260, 85);
+    }
   }
 
   private void renderControls(Graphics2D g, ScreenInfo info) {
@@ -247,25 +314,28 @@ public class GraphicEngine {
   }
 
   private void handleInput(KeyboardEvent kb) {
-    if (jeu.getMode() == Mode.PERDU || jeu.getMode() == Mode.GAGNE) return;
+    if (jeu.getMode() == Mode.PERDU || jeu.getMode() == Mode.GAGNE)
+      return;
     if (viewGraphic.getMode() != ViewGraphic.InteractionMode.NONE) {
       viewGraphic.handleKeyPress(kb.key());
       return;
     }
     switch (kb.key()) {
-      case Z -> jeu.deplacer(0, -1);
-      case S -> jeu.deplacer(0, 1);
-      case Q -> jeu.deplacer(-1, 0);
-      case D -> jeu.deplacer(1, 0);
-      case I -> jeu.getView().printBackPack();
-      case O -> viewGraphic.reorganize();
-      default -> {}
+    case Z -> jeu.deplacer(0, -1);
+    case S -> jeu.deplacer(0, 1);
+    case Q -> jeu.deplacer(-1, 0);
+    case D -> jeu.deplacer(1, 0);
+    case I -> jeu.getView().printBackPack();
+    case O -> viewGraphic.reorganize();
+    default -> {
+    }
     }
   }
 
   private void handleMouse(PointerEvent pe, ScreenInfo info) {
     int mx = pe.location().x();
     int my = pe.location().y();
+
     if (viewGraphic.getMode() != ViewGraphic.InteractionMode.NONE) {
       viewGraphic.handleMouseClick(mx, my, backpackStartX, backpackStartY);
       return;
@@ -275,10 +345,10 @@ public class GraphicEngine {
 
   private void handleContextualMouse(int mx, int my, ScreenInfo info) {
     switch (jeu.getMode()) {
-      case COMBAT -> handleCombatClick(mx, my, info);
-      case BOUTIQUE -> gererClicBoutique(mx, my);
-      case SOIN -> handleHealerClick(mx, my, info);
-      default -> handleDungeonClick(mx, my);
+    case COMBAT -> handleCombatClick(mx, my, info);
+    case BOUTIQUE -> gererClicBoutique(mx, my);
+    case SOIN -> handleHealerClick(mx, my, info);
+    default -> handleDungeonClick(mx, my);
     }
   }
 
@@ -364,11 +434,20 @@ public class GraphicEngine {
 
   private void handleCombatClick(int mx, int my, ScreenInfo info) {
     var combat = jeu.getCombat();
-    if (combat == null) return;
+    if (combat == null)
+      return;
+
     int bx = (info.width() - 200) / 2;
     if (mx >= bx && mx <= bx + 200 && my >= 520 && my <= 560) {
       executerFinDeTour(combat);
-    } else if (!detecterActionSacCombat(mx, my)) {
+      return;
+    }
+
+    if (detecterActionSacCombat(mx, my)) {
+      return;
+    }
+
+    if (mx < info.width() / 2) {
       detecterClicEnnemi(mx, my, info);
     }
   }
@@ -383,15 +462,15 @@ public class GraphicEngine {
   }
 
   private boolean detecterActionSacCombat(int mx, int my) {
-    int col = (mx - backpackStartX) / TILE_SIZE;
-    int row = (my - backpackStartY) / TILE_SIZE;
+    int col = Math.floorDiv(mx - backpackStartX, TILE_SIZE);
+    int row = Math.floorDiv(my - backpackStartY, TILE_SIZE);
+
     var bp = jeu.getHeros().getBackpack();
-    if (col >= 0 && col < bp.getWidth() && row >= 0 && row < bp.getHeight()) {
-      var itemOpt = bp.getItemAt(new Position(row, col));
-      if (itemOpt.isPresent()) {
-        tenterActionCombat(itemOpt.get());
-        return true;
-      }
+
+    var itemOpt = bp.getItemAt(new Position(row, col));
+    if (itemOpt.isPresent()) {
+      tenterActionCombat(itemOpt.get());
+      return true;
     }
     return false;
   }
@@ -399,7 +478,8 @@ public class GraphicEngine {
   private void tenterActionCombat(ItemInstance item) {
     var combat = jeu.getCombat();
     var enemies = combat.getAliveEnemies();
-    if (enemies.isEmpty()) return;
+    if (enemies.isEmpty())
+      return;
     var target = enemies.get(0);
     int oldHp = target.getHp();
     if (combat.tryHeroAction(item, target)) {
@@ -416,16 +496,22 @@ public class GraphicEngine {
       this.messageFlash = "VICTORY!";
       List<ItemInstance> loot = combat.finishCombat();
       jeu.setMode(Mode.EXPLORATION);
-      if (!loot.isEmpty()) viewGraphic.displayItemFound(loot.get(0));
+
+      if (!loot.isEmpty()) {
+        viewGraphic.displayItemFound(loot.get(0));
+      } else {
+        viewGraphic.handleLevelUpExpansion(0);
+      }
     }
   }
 
   private void detecterClicEnnemi(int mx, int my, ScreenInfo info) {
     var list = jeu.getCombat().getAliveEnemies();
-    int spacing = info.width() / (list.size() + 1);
+    int availableWidth = info.width() / 2;
+    int spacing = availableWidth / (list.size() + 1);
     for (int i = 0; i < list.size(); i++) {
       int x = (i + 1) * spacing - 64;
-      if (mx >= x && mx <= x + 128 && my >= 220 && my <= 420) {
+      if (mx >= x && mx <= x + 128 && my >= 250 && my <= 378) {
         this.messageFlash = "Target: " + list.get(i).getName();
         this.messageTimer = 60;
       }
@@ -435,32 +521,33 @@ public class GraphicEngine {
   private void renderGameOver(Graphics2D g, ScreenInfo screenInfo) {
     g.setColor(Color.BLACK);
     g.fillRect(0, 0, screenInfo.width(), screenInfo.height());
-    
+
     g.setColor(Color.RED);
     g.setFont(new Font("Serif", Font.BOLD, 48));
     String text = "VOUS ÊTES MORT";
     int x = (screenInfo.width() - g.getFontMetrics().stringWidth(text)) / 2;
     g.drawString(text, x, 200);
-    
+
     renderHallOfFame(g, screenInfo, hof);
   }
 
   private void renderVictory(Graphics2D g, ScreenInfo screenInfo) {
     g.setColor(new Color(0, 100, 0, 200));
     g.fillRect(0, 0, screenInfo.width(), screenInfo.height());
-    
+
     g.setColor(Color.YELLOW);
     g.setFont(new Font("Serif", Font.BOLD, 48));
     String text = "VICTOIRE !";
     int x = (screenInfo.width() - g.getFontMetrics().stringWidth(text)) / 2;
     g.drawString(text, x, 200);
-    
+
     renderHallOfFame(g, screenInfo, hof);
   }
 
   private void renderCombatUI(Graphics2D g, ScreenInfo info) {
     var combat = jeu.getCombat();
-    if (combat == null) return;
+    if (combat == null)
+      return;
     g.setColor(new Color(0, 0, 0, 180));
     g.fillRect(0, 0, info.width(), 600);
     renderEnemies(g, combat.getAliveEnemies(), info);
@@ -468,9 +555,12 @@ public class GraphicEngine {
   }
 
   private void renderEnemies(Graphics2D g, List<Ennemi> ennemis, ScreenInfo info) {
-    int spacing = info.width() / (ennemis.size() + 1);
+    // On limite la zone des ennemis à la moitié gauche de l'écran (0 à width/2)
+    int availableWidth = info.width() / 2;
+    int spacing = availableWidth / (ennemis.size() + 1);
     for (int i = 0; i < ennemis.size(); i++) {
-      drawEnemyCombat(g, ennemis.get(i), (i + 1) * spacing - 64, 250);
+      // Les ennemis seront centrés dans la moitié gauche
+      drawEnemyCombat(g, ennemis.get(i), (i + 1) * spacing - 32, 250);
     }
   }
 
@@ -535,16 +625,16 @@ public class GraphicEngine {
 
   private void renderGhostItem(Graphics2D g) {
     ItemInstance item = viewGraphic.getCurrentItem();
-    boolean active = viewGraphic.getMode() == ViewGraphic.InteractionMode.WAITING_POSITION 
-                  || viewGraphic.getMode() == ViewGraphic.InteractionMode.REORGANIZE;
+    boolean active = viewGraphic.getMode() == ViewGraphic.InteractionMode.WAITING_POSITION
+        || viewGraphic.getMode() == ViewGraphic.InteractionMode.REORGANIZE;
     if (item != null && active) {
       g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.6f));
       int col = (mouseX - backpackStartX) / TILE_SIZE;
       int row = (mouseY - backpackStartY) / TILE_SIZE;
-      int dx = (col >= 0 && col < jeu.getHeros().getBackpack().getWidth()) ? 
-                backpackStartX + col * TILE_SIZE : mouseX - 32;
-      int dy = (row >= 0 && row < jeu.getHeros().getBackpack().getHeight()) ? 
-                backpackStartY + row * TILE_SIZE : mouseY - 32;
+      int dx = (col >= 0 && col < jeu.getHeros().getBackpack().getWidth()) ? backpackStartX + col * TILE_SIZE
+          : mouseX - 32;
+      int dy = (row >= 0 && row < jeu.getHeros().getBackpack().getHeight()) ? backpackStartY + row * TILE_SIZE
+          : mouseY - 32;
       drawItem(g, item, dx, dy, TILE_SIZE);
       g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
     }
@@ -553,7 +643,8 @@ public class GraphicEngine {
   private void drawItem(Graphics2D g, ItemInstance item, int px, int py, int cellSize) {
     String name = item.getItem().name().replace(" ", "_");
     Image image = img.getImage(name);
-    if (image == null) return;
+    if (image == null)
+      return;
     var shape = item.getItem().shapeAtRotation(0);
     int bw = shape.stream().mapToInt(Position::column).max().getAsInt() + 1;
     int bh = shape.stream().mapToInt(Position::row).max().getAsInt() + 1;
@@ -568,12 +659,20 @@ public class GraphicEngine {
     int angle = item.getRotationAngle();
     if (angle != 0) {
       g.rotate(Math.toRadians(angle), size / 2.0, size / 2.0);
-      if (angle == 90)  g.translate(0, -bh * size + size);
-      if (angle == 180) g.translate(-bw * size + size, -bh * size + size);
-      if (angle == 270) g.translate(-bw * size + size, 0);
+      if (angle == 90)
+        g.translate(0, -bh * size + size);
+      if (angle == 180)
+        g.translate(-bw * size + size, -bh * size + size);
+      if (angle == 270)
+        g.translate(-bw * size + size, 0);
     }
   }
 
+  /**
+   * Provides access to the interaction view manager. 
+   * * @return the
+   * {@code ViewGraphic} instance handling the current interaction mode.
+   */
   public ViewGraphic getViewGraphic() {
     return viewGraphic;
   }
@@ -612,12 +711,13 @@ public class GraphicEngine {
     g.setColor(Color.WHITE);
     g.drawRect(x, y, 128, 10);
   }
-  
+
   /**
    * Renders the top scores from the Hall of Fame onto the screen.
-   * @param g the graphics context.
+   * 
+   * @param g    the graphics context.
    * @param info screen dimensions and info.
-   * @param hof the persistent high score manager.
+   * @param hof  the persistent high score manager.
    */
   /**
    * Renders the top scores on the screen.
@@ -625,11 +725,11 @@ public class GraphicEngine {
   private void renderHallOfFame(Graphics2D g, ScreenInfo info, HallOfFame hof) {
     int startX = info.width() / 2 - 150;
     int startY = 300;
-    
+
     g.setFont(new Font("Arial", Font.BOLD, 24));
     g.setColor(Color.ORANGE);
     g.drawString("--- HALL OF FAME ---", startX, startY);
-    
+
     List<ScoreEntry> entries = getSafeScores(hof);
     for (int i = 0; i < entries.size(); i++) {
       renderScoreLine(g, entries.get(i), startX, startY + 40 + (i * 30), i + 1);
@@ -647,7 +747,7 @@ public class GraphicEngine {
     try {
       return hof.loadScores();
     } catch (java.io.IOException e) {
-      return List.of(); 
+      return List.of();
     }
   }
 }

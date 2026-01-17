@@ -62,6 +62,7 @@ public final class Combat {
    * @return true if the action was performed.
    */
   public boolean tryHeroAction(ItemInstance instance, Ennemi target) {
+    Objects.requireNonNull(target);
     Objects.requireNonNull(instance);
     if (!isHeroTurn || !heros.estVivant()) {
       return false;

@@ -7,8 +7,12 @@ import fr.uge.backpackhero.entites.Heros;
  */
 public interface BackpackView {
   void displayItemFound(ItemInstance item);
+
   boolean interactBeforePlacement(ItemInstance item);
+
   void attemptPlacement(ItemInstance item);
+
   void printBackPack();
+
   void handleForcedCurse(Heros heros, Curse curse);
 }

@@ -61,29 +61,25 @@ public record Armor(String name, List<Position> pos, Rarity rarity, int stats, i
     };
   }
 
+  /**
+   * Defines the active usage of the item during combat.
+   *
+   * @param heros    the hero attempting to use the item.
+   * @param target   the enemy targeted by the item's effect.
+   * @param backpack the backpack containing the item, used for layout-based
+   *                 bonuses.
+   * @param instance the specific instance of the item being used.
+   * @return false
+   * @throws NullPointerException if any of the provided arguments are
+   *                              {@code null}.
+   */
   @Override
   public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance) {
+    Objects.requireNonNull(backpack);
+    Objects.requireNonNull(instance);
     Objects.requireNonNull(heros);
-    if (target == null || !target.estVivant())
-      return false;
-    int bonus = 0;
-    // Positions absolues occupées par l'armure
-    var positions = backpack.getPositions(instance);
-    for (var pos : positions) {
-      int row = pos.row() + 1;
-      while (row < backpack.getHeight()) {
-        var below = new Position(pos.row() + 1, pos.column());
-        if (!backpack.isAvailable(below) || !backpack.getItemAt(below).isEmpty()) {
-          break;
-        }
-        bonus++;
-        row++;
-      }
-    }
-    int totalProtection = stats + bonus;
-    heros.ajouterProtection(totalProtection);
-    System.out.println(name + " fournit " + stats + " protection (+ " + bonus + " grâce à l'espace en dessous)");
-    return true;
+    Objects.requireNonNull(target);
+    return false;
   }
 
   @Override

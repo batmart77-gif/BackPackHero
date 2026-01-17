@@ -6,12 +6,12 @@ import java.util.Objects;
 import fr.uge.backpackhero.combat.Effect;
 import fr.uge.backpackhero.item.Armor;
 import fr.uge.backpackhero.item.BackPack;
-import fr.uge.backpackhero.item.Item;
 import fr.uge.backpackhero.item.ItemInstance;
+import fr.uge.backpackhero.item.Position;
 
 /**
- * Main character class managing health, level progression, inventory, 
- * gold transactions, and status effect mechanics including curse penalties.
+ * Main character class managing health, level progression, inventory, gold
+ * transactions, and status effect mechanics including curse penalties.
  */
 public final class Heros {
   private int hp;
@@ -24,12 +24,11 @@ public final class Heros {
   private int xpToNextLevel;
   private final BackPack backpack;
   private final Map<Effect, Integer> statusEffects = new HashMap<>();
-  
+
   private int cursePenaltyDuration = 0;
   private int hpMaxPenalty = 0;
   private int currentCurseRefusalDamage = 0;
   private int mana;
-  private int maxMana;
 
   /**
    * Initializes the hero with starting stats (40 HP, 3 Energy).
@@ -41,12 +40,12 @@ public final class Heros {
     this.energy = maxEnergy;
     this.currentLevel = 1;
     this.xpToNextLevel = 10;
-    this.backpack = new BackPack(); 
+    this.backpack = new BackPack();
   }
 
   /**
-   * Applies a temporary Max HP penalty (20%) when a curse is removed.
-   * Lasts for 2 combats.
+   * Applies a temporary Max HP penalty (20%) when a curse is removed. Lasts for 2
+   * combats.
    */
   public void applyCurseRemovalPenalty() {
     this.hpMaxPenalty = (int) (this.maxHp * 0.20);
@@ -72,33 +71,71 @@ public final class Heros {
   public void debuterTourCombat() {
     this.energy = maxEnergy;
     this.protection = 0;
+
     for (var instance : backpack.getItems()) {
       if (instance.getItem() instanceof Armor armor) {
-        this.protection += armor.stats();
+        int totalArmorForItem = armor.stats();
+
+        int bonus = calculerBonusEspace(instance);
+
+        this.protection += (totalArmorForItem + bonus);
+        System.out.println(armor.name() + " donne " + (totalArmorForItem + bonus) + " protection.");
       }
     }
   }
 
+  private int calculerBonusEspace(ItemInstance instance) {
+    int bonus = 0;
+    var positions = backpack.getPositions(instance);
+
+    for (var pos : positions) {
+      int r = pos.row() + 1;
+      while (r < backpack.getHeight()) {
+        Position below = new Position(r, pos.column());
+        if (backpack.getUnlockedTiles().contains(below) && backpack.getItemAt(below).isEmpty()) {
+          bonus++;
+          r++;
+        } else {
+          break;
+        }
+      }
+    }
+    return bonus;
+  }
+
   /**
    * Processes damage intake, handling protection and Dodge charges.
+   * 
    * @param damage raw damage value.
    */
   public void recevoirDegats(int damage) {
-    if (damage < 0) throw new IllegalArgumentException("Damage cannot be negative");
-    if (getStatus(Effect.DODGE) > 0) return;
-    
-    int absorbed = Math.min(damage, this.protection);
-    this.protection -= absorbed;
-    this.hp = Math.max(0, this.hp - (damage - absorbed));
+    if (getStatus(Effect.DODGE) > 0) {
+      statusEffects.merge(Effect.DODGE, -1, Integer::sum);
+      return;
+    }
+
+    int resteADeduire = damage;
+
+    if (this.protection > 0) {
+      int absorption = Math.min(resteADeduire, this.protection);
+      this.protection -= absorption;
+      resteADeduire -= absorption;
+    }
+
+    if (resteADeduire > 0) {
+      this.hp = Math.max(0, this.hp - resteADeduire);
+    }
   }
 
   /**
    * Handles level-up and XP progression.
+   * 
    * @param amount XP gained.
    * @return number of levels gained.
    */
   public int gainXp(int amount) {
-    if (amount < 0) throw new IllegalArgumentException("XP cannot be negative");
+    if (amount < 0)
+      throw new IllegalArgumentException("XP cannot be negative");
     int levels = 0;
     this.currentXp += amount;
     while (this.currentXp >= this.xpToNextLevel) {
@@ -134,50 +171,111 @@ public final class Heros {
 
   /**
    * Calculates total final score (Max HP + inventory value).
+   * 
    * @return final score.
    */
   public int calculateFinalScore() {
-    int itemsValue = backpack.getItems().stream()
-        .mapToInt(i -> i.getItem().price()).sum();
+    int itemsValue = backpack.getItems().stream().mapToInt(i -> i.getItem().price()).sum();
     return this.maxHp + itemsValue;
   }
 
   // --- Getters & Small Helpers ---
-  public int getPv() { return hp; }
-  public int getPvMax() { return maxHp; }
-  public int getLevel() { return currentLevel; }
-  public int getGold() { return backpack.getGoldQuantity(); }
-  public int getEnergie() { return energy; }
-  public int getProtection() { return protection; }
-  public int getMana() { return mana; }
-  public boolean estVivant() { return hp > 0; }
-  public BackPack getBackpack() { return backpack; }
-
-  public void acceptCurseImmediate() { this.currentCurseRefusalDamage = 0; }
-  public void refuseCurseImmediate() { 
-    this.currentCurseRefusalDamage++; 
-    recevoirDegats(currentCurseRefusalDamage); 
+  public int getPv() {
+    return hp;
   }
-  public void gagnerOr(int amount) { backpack.addGold(amount); }
+
+  public int getPvMax() {
+    return maxHp;
+  }
+
+  public int getXp() {
+    return currentXp;
+  }
+
+  public int getLevel() {
+    return currentLevel;
+  }
+
+  public int getXpToNextLevel() {
+    return xpToNextLevel;
+  }
+
+  public int getGold() {
+    return backpack.getGoldQuantity();
+  }
+
+  public int getEnergie() {
+    return energy;
+  }
+
+  public int getProtection() {
+    return protection;
+  }
+
+  public int getMana() {
+    return mana;
+  }
+
+  public boolean estVivant() {
+    return hp > 0;
+  }
+
+  public BackPack getBackpack() {
+    return backpack;
+  }
+
+  public void acceptCurseImmediate() {
+    this.currentCurseRefusalDamage = 0;
+  }
+
+  public void refuseCurseImmediate() {
+    this.currentCurseRefusalDamage++;
+    recevoirDegats(currentCurseRefusalDamage);
+  }
+
+  public void gagnerOr(int amount) {
+    backpack.addGold(amount);
+  }
+
   public boolean payer(int amount) {
-    if (amount >= 0 && getGold() >= amount) { backpack.spendGold(amount); return true; }
+    if (amount >= 0 && getGold() >= amount) {
+      backpack.spendGold(amount);
+      return true;
+    }
     return false;
   }
+
   public void addEffect(Effect effect, int amount) {
     Objects.requireNonNull(effect);
     statusEffects.merge(effect, amount, Integer::sum);
   }
-  public int getStatus(Effect effect) { return statusEffects.getOrDefault(effect, 0); }
-  public void soigner(int val) { this.hp = Math.min(maxHp, hp + val); }
-  public void rafraichirMana() { this.mana = backpack.countManaStones(); }
-  public void ajouterProtection(int val) { this.protection += val; }
+
+  public int getStatus(Effect effect) {
+    return statusEffects.getOrDefault(effect, 0);
+  }
+
+  public void soigner(int val) {
+    this.hp = Math.min(maxHp, hp + val);
+  }
+
+  public void rafraichirMana() {
+    this.mana = backpack.countManaStones();
+  }
+
+  public void ajouterProtection(int val) {
+    this.protection += val;
+  }
+
   public boolean depenserEnergie(int cost) {
-    if (energy >= cost) { this.energy -= cost; return true; }
+    if (energy >= cost) {
+      this.energy -= cost;
+      return true;
+    }
     return false;
   }
-  
+
   public void takeDamage(int amount) {
     this.hp = Math.max(0, this.hp - amount);
-    
-}
+
+  }
 }

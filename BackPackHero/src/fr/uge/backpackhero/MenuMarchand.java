@@ -7,8 +7,6 @@ import fr.uge.backpackhero.donjon.MerchantRoom;
 import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.item.ItemInstance;
 import fr.uge.backpackhero.item.Position;
-import fr.uge.backpackhero.item.StuffFactory;
-import fr.uge.backpackhero.item.View;
 
 /**
  * Handles the console-based interaction between the hero and the merchant.
@@ -30,8 +28,6 @@ public final class MenuMarchand {
     Objects.requireNonNull(heros);
     Objects.requireNonNull(shop);
     Objects.requireNonNull(scanner);
-
-    System.out.println("Gold deals for a gold hero!");
     boolean shopping = true;
     while (shopping) {
       afficherInterfaceGlobale(heros, shop);
@@ -42,9 +38,6 @@ public final class MenuMarchand {
   }
 
   private static void afficherInterfaceGlobale(Heros heros, MerchantRoom shop) {
-    System.out.println("\n--- SHOP --- (Balance: " + heros.getGold() + " Gold)");
-    System.out.println("YOUR BACKPACK:");
-    new View(heros.getBackpack(), new StuffFactory(), heros).printBackPack();
     afficherStock(shop.stock());
     System.out.println("\nACTIONS: [Number] Buy | [V] Sell | [Q] Quit");
     System.out.print("> ");
@@ -103,7 +96,6 @@ public final class MenuMarchand {
   }
 
   private static void menuVente(Heros heros, Scanner scanner) {
-    new View(heros.getBackpack(), new StuffFactory(), heros).printBackPack();
     var items = heros.getBackpack().getItems();
     System.out.println("\n-- SELL -- (X to Cancel)");
     for (int i = 0; i < items.size(); i++) {

@@ -62,23 +62,48 @@ public record MagicItem(String name, List<Position> pos, Rarity rarity, int stat
     };
   }
 
+  /**
+   * Triggers the magical item's offensive ability by consuming an adjacent Mana
+   * Stone.
+   * <p>
+   * The logic proceeds as follows:
+   * <ol>
+   * <li>Validates that the target exists and is alive.</li>
+   * <li>Searches the backpack for any adjacent item instance that qualifies as a
+   * {@code ManaStone}.</li>
+   * <li>If a stone is found, the target receives damage equal to the item's
+   * {@code stats}, and the consumed {@code ManaStone} is permanently removed from
+   * the backpack.</li>
+   * </ol>
+   * </p>
+   *
+   * @param heros    the hero using the item.
+   * @param target   the enemy to be damaged.
+   * @param backpack the inventory containing both this item and potential mana
+   *                 stones.
+   * @param instance the specific instance of this item being activated.
+   * @return {@code true} if a mana stone was successfully found and consumed to
+   *         deal damage; {@code false} if the target is invalid or no mana stone
+   *         is adjacent.
+   * @throws NullPointerException if {@code heros}, {@code target},
+   *                              {@code backpack}, or {@code instance} is
+   *                              {@code null}.
+   */
   @Override
   public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance) {
     Objects.requireNonNull(heros);
-    if (target == null || !target.estVivant())
+    Objects.requireNonNull(target);
+    Objects.requireNonNull(backpack);
+    Objects.requireNonNull(instance);
+    if (!target.estVivant())
       return false;
-    // 1. On cherche une pierre de mana adjacente
     var manaOpt = backpack.getAdjacentItemInstance(instance, item -> item instanceof ManaStone);
     if (manaOpt.isPresent()) {
       ItemInstance manaInst = manaOpt.get();
-      // 2. On applique les dégâts de la flèche
-      System.out.println(name + " utilise une pierre de mana et inflige " + stats + " dégâts !");
       target.recevoirDegats(stats);
-      // 3. IMPORTANT : On consomme la pierre
       backpack.removeItem(manaInst);
       return true;
     }
-    System.out.println("Pas de pierre de mana adjacente pour l'item magique !");
     return false;
   }
 }

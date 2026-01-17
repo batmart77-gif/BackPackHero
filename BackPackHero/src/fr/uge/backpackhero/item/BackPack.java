@@ -26,6 +26,11 @@ public class BackPack {
    * {@code Position} it occupies in the grid.
    */
   private final HashMap<ItemInstance, List<Position>> backpack;
+
+  /**
+   * The current amount of gold currency held by the player. This value is used
+   * for transactions with merchants and healers.
+   */
   private int goldQuantity;
 
   /**
@@ -37,9 +42,6 @@ public class BackPack {
     this.grid = new HashMap<>();
     this.unlockedTiles = new HashSet<>();
     this.goldQuantity = 0;
-
-    // Initialize the starting 3x5 area as unlocked
-    // Starting at offset (2, 2) to allow expansion in all directions
     for (int r = 0; r < 3; r++) {
       for (int c = 0; c < 5; c++) {
         unlockedTiles.add(new Position(r, c));
@@ -136,7 +138,6 @@ public class BackPack {
     for (var relative : instance.getCurrentShape()) {
       Position absPos = new Position(startPos.row() + relative.row(), startPos.column() + relative.column());
 
-      // On vérifie si la case est débloquée ET si elle n'est pas déjà occupée
       if (!isAvailable(absPos)) {
         return false;
       }
@@ -159,12 +160,10 @@ public class BackPack {
     for (var relative : itemInstance.getCurrentShape()) {
       Position absPos = new Position(startPos.row() + relative.row(), startPos.column() + relative.column());
 
-      this.grid.put(absPos, itemInstance); // On remplit la "grille" dynamique
+      this.grid.put(absPos, itemInstance);
       absolutePositions.add(absPos);
     }
 
-    // On garde en mémoire quelles cases cet item occupe pour le supprimer
-    // facilement plus tard
     this.backpack.put(itemInstance, absolutePositions);
   }
 
@@ -178,14 +177,12 @@ public class BackPack {
   public boolean add(ItemInstance itemInstance, Position startPos) {
     Objects.requireNonNull(itemInstance);
     Objects.requireNonNull(startPos);
-
     var item = itemInstance.getItem();
     switch (item) {
     case Curse c -> {
       boolean added = addCurse(itemInstance, startPos);
-      if (added) {
+      if (added)
         itemInstance.setPos(startPos);
-      }
       return added;
     }
     default -> {
@@ -260,37 +257,66 @@ public class BackPack {
     return new ArrayList<>(this.backpack.keySet());
   }
 
+  /**
+   * Returns a view of all grid positions currently unlocked in the backpack.
+   *
+   * @return an unmodifiable {@code Set} of {@link Position} objects representing
+   *         the available space in the inventory.
+   */
   public Set<Position> getUnlockedTiles() {
     return Collections.unmodifiableSet(unlockedTiles);
   }
 
   /**
-   * Compte le nombre de pierres de mana présentes dans le sac. Cette méthode
-   * respecte la règle : 1 pierre = 1 case.
+   * Counts the total number of mana stones currently stored in the backpack.
+   *
+   * @return the total count of items identified as mana stones.
    */
   public int countManaStones() {
     return backpack.keySet().stream().map(ItemInstance::getItem).filter(Item::isManaStone).mapToInt(item -> 1).sum();
   }
 
   /**
-   * Vérifie si l'instance donnée touche un objet répondant au critère. Deux
-   * objets sont adjacents si au moins une de leurs cases est côte à côte
-   * (distance de 1).
+   * Determines if there is another item in the backpack that satisfies a given
+   * condition and is physically adjacent to the specified item.
+   *
+   * @param self     the item instance used as the reference point for the
+   *                 adjacency check.
+   * @param criteria a {@link java.util.function.Predicate} used to define the
+   *                 characteristics of the items being searched for.
+   * @return {@code true} if at least one item matching the criteria is adjacent
+   *         to {@code self}; {@code false} otherwise.
+   * @throws NullPointerException if {@code self} or {@code criteria} is
+   *                              {@code null}.
    */
   public boolean hasAdjacentItem(ItemInstance self, java.util.function.Predicate<Item> criteria) {
-    var myPositions = backpack.get(self); // List<Position>
+    Objects.requireNonNull(self);
+    Objects.requireNonNull(criteria);
+    var myPositions = backpack.get(self);
 
-    return backpack.entrySet().stream().filter(entry -> !entry.getKey().equals(self)) // Ne pas se comparer à soi-même
+    return backpack.entrySet().stream().filter(entry -> !entry.getKey().equals(self))
         .filter(entry -> criteria.test(entry.getKey().getItem()))
         .anyMatch(entry -> areAdjacent(myPositions, entry.getValue()));
   }
 
   /**
-   * Recherche un objet adjacent répondant à un critère et renvoie le premier
-   * trouvé. (utile)
+   * Searches for and returns an instance of an item that satisfies the given
+   * criteria and is physically adjacent to the specified item.
+   *
+   * @param self     the reference item instance used to check for neighbors.
+   * @param criteria a {@link java.util.function.Predicate} defining the required
+   *                 properties of the neighbor to be found.
+   * @return an {@link java.util.Optional} containing the first adjacent
+   *         {@code ItemInstance} that matches the criteria, or an empty
+   *         {@code Optional} if no such item exists or if the reference item is
+   *         not in the backpack.
+   * @throws NullPointerException if {@code self} or {@code criteria} is
+   *                              {@code null}.
    */
   public Optional<ItemInstance> getAdjacentItemInstance(ItemInstance self,
       java.util.function.Predicate<Item> criteria) {
+    Objects.requireNonNull(self);
+    Objects.requireNonNull(criteria);
     var myPositions = backpack.get(self);
     if (myPositions == null)
       return Optional.empty();
@@ -303,7 +329,6 @@ public class BackPack {
   private boolean areAdjacent(List<Position> posA, List<Position> posB) {
     for (var pA : posA) {
       for (var pB : posB) {
-        // Distance de Manhattan = 1 (Haut, Bas, Gauche, Droite)
         int dist = Math.abs(pA.row() - pB.row()) + Math.abs(pA.column() - pB.column());
         if (dist == 1)
           return true;
@@ -313,19 +338,18 @@ public class BackPack {
   }
 
   /**
-   * Retire tous les objets du sac et les renvoie sous forme de liste. Les cases
-   * débloquées et l'or restent inchangés. * @return La liste des ItemInstance qui
-   * étaient dans le sac.
+   * Removes all items from the backpack and resets their internal positions. This
+   * effectively clears both the grid occupancy and the item tracking map.
+   *
+   * @return a {@link java.util.List} containing all {@link ItemInstance} objects
+   *         that were previously stored in the backpack.
    */
   public List<ItemInstance> removeAllItems() {
-    // 1. On récupère tous les objets avant de vider
     List<ItemInstance> itemsToReplace = new ArrayList<>(this.backpack.keySet());
 
-    // 2. On vide les structures de données liées au placement
     this.grid.clear();
     this.backpack.clear();
 
-    // 3. On remet les positions des instances à null (optionnel mais propre)
     for (ItemInstance instance : itemsToReplace) {
       instance.setPos(null);
     }
@@ -333,14 +357,37 @@ public class BackPack {
     return itemsToReplace;
   }
 
+  /**
+   * Calculates the current width of the backpack grid. The width is determined by
+   * finding the highest column index among all unlocked tiles and adding one.
+   *
+   * @return the total number of columns spanning the unlocked area of the
+   *         backpack, or 0 if no tiles are unlocked.
+   */
   public int getWidth() {
     return unlockedTiles.stream().mapToInt(Position::column).max().orElse(0) + 1;
   }
 
+  /**
+   * Calculates the current height of the backpack grid. The height is determined
+   * by finding the highest row index among all unlocked tiles and adding one.
+   *
+   * @return the total number of rows spanning the unlocked area of the backpack,
+   *         or 0 if no tiles are unlocked.
+   */
   public int getHeight() {
     return unlockedTiles.stream().mapToInt(Position::row).max().orElse(0) + 1;
   }
 
+  /**
+   * Retrieves the grid positions occupied by a specific item instance.
+   *
+   * @param instance the item instance for which to find occupied positions.
+   * @return a {@link java.util.List} containing the {@link Position} objects
+   *         occupied by the item; returns an empty list if the item is not in the
+   *         backpack.
+   * @throws NullPointerException if {@code instance} is {@code null}.
+   */
   public List<Position> getPositions(ItemInstance instance) {
     Objects.requireNonNull(instance);
     return List.copyOf(backpack.getOrDefault(instance, List.of()));

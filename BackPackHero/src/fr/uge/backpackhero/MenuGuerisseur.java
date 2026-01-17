@@ -24,50 +24,25 @@ public class MenuGuerisseur {
     Objects.requireNonNull(heros);
     Objects.requireNonNull(scanner);
     
-    System.out.println("Welcome to the healer's sanctuary.");
     boolean interacting = true;
     while (interacting) {
-      displayStatus(heros);
       String input = scanner.next().toUpperCase();
       interacting = processChoice(input, heros);
     }
   }
 
-  private static void displayStatus(Heros heros) {
-    System.out.println("\n--- HEALER ---");
-    System.out.println("Health: " + heros.getPv() + "/" + heros.getPvMax());
-    System.out.println("Gold: " + heros.getGold());
-    System.out.println("CHOICES:");
-    System.out.println("  [1] Light Heal (+" + LIGHT_HEAL_AMOUNT + " HP) - Cost: " + LIGHT_HEAL_PRICE);
-    System.out.println("  [2] Full Heal (Max HP) - Cost: " + FULL_HEAL_PRICE);
-    System.out.println("  [Q] Quit");
-    System.out.print("> ");
-  }
-
   private static boolean processChoice(String input, Heros heros) {
     switch (input) {
-      case "Q" -> {
-        System.out.println("\"Take care of yourself...\"");
-        return false;
-      }
-      case "1" -> performHeal(heros, LIGHT_HEAL_AMOUNT, LIGHT_HEAL_PRICE, "A soft light heals you.");
-      case "2" -> performHeal(heros, heros.getPvMax(), FULL_HEAL_PRICE, "You are fully restored!");
+      case "1" -> performHeal(heros, LIGHT_HEAL_AMOUNT, LIGHT_HEAL_PRICE);
+      case "2" -> performHeal(heros, heros.getPvMax(), FULL_HEAL_PRICE);
       default -> System.out.println("Unknown command.");
     }
     return true;
   }
 
-  private static void performHeal(Heros heros, int amount, int price, String message) {
-    if (heros.getPv() >= heros.getPvMax()) {
-      System.out.println("You are already at full health!");
-      return;
-    }
-    
+  private static void performHeal(Heros heros, int amount, int price) {
     if (heros.payer(price)) {
       heros.soigner(amount);
-      System.out.println(message);
-    } else {
-      System.out.println("You don't have enough gold.");
     }
   }
 }

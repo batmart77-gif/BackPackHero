@@ -63,27 +63,41 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
     };
   }
 
+  /**
+   * Executes a melee attack that consumes energy and checks for weapon synergies.
+   * <p>
+   * This implementation validates all game components and ensures the target is
+   * alive. If the hero has sufficient energy, the attack is performed. The damage
+   * is doubled if another {@code MeleeWeapon} is physically adjacent to this item
+   * in the backpack grid.
+   * </p>
+   *
+   * @param heros    the hero initiating the attack.
+   * @param target   the enemy receiving the damage.
+   * @param backpack the inventory system used to detect adjacent weapon bonuses.
+   * @param instance the specific instance of this weapon being used.
+   * @return {@code true} if the attack was successfully executed (energy spent
+   *         and target alive); {@code false} otherwise.
+   * @throws NullPointerException if any of the provided arguments are
+   *                              {@code null}.
+   */
   @Override
   public boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance) {
     Objects.requireNonNull(heros);
-    if (target == null || !target.estVivant())
+    Objects.requireNonNull(target);
+    Objects.requireNonNull(backpack);
+    Objects.requireNonNull(instance);
+    if (!target.estVivant())
       return false;
     if (heros.depenserEnergie(cost)) {
-      // 1. Calculer les dégâts de base
       int finalDamage = stats;
-      // 2. Vérifier s'il y a une autre épée adjacente
-      // On utilise la méthode 'hasAdjacentItem'
       boolean isBoosted = backpack.hasAdjacentItem(instance, item -> item instanceof MeleeWeapon);
       if (isBoosted) {
         finalDamage *= 2;
-        System.out.println("⚔️ Combo d'épées ! Les dégâts sont doublés !");
       }
-      // 3. Infliger les dégâts
-      System.out.println("L'épée inflige " + finalDamage + " dégâts.");
       target.recevoirDegats(finalDamage);
       return true;
     }
     return false;
   }
-
 }

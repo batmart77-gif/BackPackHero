@@ -35,6 +35,7 @@ public final class Jeu {
     this.heros = Objects.requireNonNull(heros);
     this.donjon = Objects.requireNonNull(donjon);
     this.view = Objects.requireNonNull(vg1);
+    Objects.requireNonNull(vg2);
     this.modeActuel = Mode.EXPLORATION;
     this.posX = donjon.getCurrentFloor().startX();
     this.posY = donjon.getCurrentFloor().startY();

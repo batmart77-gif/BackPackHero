@@ -39,8 +39,8 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
    * Returns a human-readable description of the ranged weapon.
    */
   public String details() {
-    return "Range Weapon " + name + ", " + rarity
-        + " needs " + cost + " to be used, can be sold or bought to a merchant for " + price;
+    return "Range Weapon " + name + ", " + rarity + " needs " + cost
+        + " to be used, can be sold or bought to a merchant for " + price;
   }
 
   /**
@@ -49,9 +49,9 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
   @Override
   public String toString() {
     return switch (name) {
-      case "Composite Bow" -> "CB";
-      case "Mouse Bow" -> "MB";
-      default -> throw new IllegalArgumentException("Unknown ranged weapon type: " + name);
+    case "Composite Bow" -> "CB";
+    case "Mouse Bow" -> "MB";
+    default -> throw new IllegalArgumentException("Unknown ranged weapon type: " + name);
     };
   }
 
@@ -60,28 +60,19 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
     Objects.requireNonNull(heros);
     Objects.requireNonNull(backpack);
     Objects.requireNonNull(instance);
-
-    if (target == null || !target.estVivant()) {
+    Objects.requireNonNull(target);
+    if (!target.estVivant())
       return false;
-    }
-
     if (heros.depenserEnergie(cost)) {
-      // Recherche d'une flèche adjacente
       var arrowOpt = backpack.getAdjacentItemInstance(instance, item -> item instanceof Arrow);
       if (arrowOpt.isPresent()) {
         ItemInstance arrowInst = arrowOpt.get();
         Arrow arrow = (Arrow) arrowInst.getItem();
-
-        System.out.println("L'arc tire une flèche !");
         target.recevoirDegats(arrow.stats());
-
-        // Consommation de la flèche
         backpack.removeItem(arrowInst);
         return true;
       }
     }
-
-    System.out.println("Pas de flèche adjacente pour l'arc !");
     return false;
   }
 }
