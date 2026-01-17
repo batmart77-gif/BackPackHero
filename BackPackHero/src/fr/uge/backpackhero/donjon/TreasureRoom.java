@@ -26,23 +26,44 @@ public record TreasureRoom(List<ItemInstance> loot) implements Room {
     Objects.requireNonNull(loot);
   }
   
+  /**
+   * Draws the representative treasure or the first item of the loot on the map.
+   *
+   * @param g the graphics context used for drawing.
+   * @param x the x-coordinate on the screen.
+   * @param y the y-coordinate on the screen.
+   * @param size the size of the tile in pixels.
+   * @param img the loader providing the item textures.
+   */
   @Override
   public void draw(Graphics2D g, int x, int y, int size, ImageLoader img) {
-      if (loot != null && !loot.isEmpty()) {
-          String itemName = loot.get(0).getItem().name().replace(" ", "_");
-          g.drawImage(img.getImage(itemName), x, y, size, size, null);
-      }
+    Objects.requireNonNull(g);
+    Objects.requireNonNull(img);
+    if (!loot.isEmpty()) {
+      String itemName = loot.get(0).getItem().name().replace(" ", "_");
+      g.drawImage(img.getImage(itemName), x, y, size, size, null);
+    }
   }
   
+  /**
+   * Triggers the loot collection process when the player clicks on the chest.
+   * Iterates through the loot and prompts the user for placement in the backpack.
+   *
+   * @param jeu the current game instance.
+   */
   @Override
   public void onClick(Jeu jeu) {
-      System.out.println("Coffre trouvé !");
-      for (var item : this.loot()) { // Utilise loot() ou items() selon ton record
-          System.out.println("Contenu : " + item.getName());
-          jeu.getView().displayItemFound(item);
-          if (jeu.getView().interactBeforePlacement(item)) {
-              jeu.getView().attemptPlacement(item);
-          }
-      }
+    Objects.requireNonNull(jeu);
+    jeu.notifier("Chest opened!");
+    for (var item : this.loot) {
+      processLootItem(jeu, item);
+    }
+  }
+
+  private void processLootItem(Jeu jeu, ItemInstance item) {
+    jeu.getView().displayItemFound(item);
+    if (jeu.getView().interactBeforePlacement(item)) {
+      jeu.getView().attemptPlacement(item);
+    }
   }
 }

@@ -16,54 +16,39 @@ public final class HallOfFame {
   private static final Path FAME_FILE = Path.of("hall_of_fame.txt");
 
   /**
-   * Records a new player score and updates the top 3 rankings.
+   * Records a new score and updates the top 3 rankings.
    *
-   * @param name  the non-null name of the player.
-   * @param score the numerical score achieved.
+   * @param entry the non-null score entry to record.
    * @throws IOException if the score file cannot be written.
-   * @throws NullPointerException if name is null.
    */
-  public void recordScore(String name, int score) throws IOException {
-    Objects.requireNonNull(name);
-    List<String> scores = loadScores();
-    scores.add(name + ":" + score);
+  public void recordScore(ScoreEntry entry) throws IOException {
+    Objects.requireNonNull(entry);
+    List<ScoreEntry> allScores = loadScores();
+    allScores.add(entry);
     
-    List<String> top3 = scores.stream()
-        .map(line -> line.split(":"))
-        .filter(parts -> parts.length == 2)
-        .sorted((a, b) -> Integer.compare(Integer.parseInt(b[1]), Integer.parseInt(a[1])))
+    List<String> top3 = allScores.stream()
+        .sorted() // Uses ScoreEntry.compareTo (descending)
         .limit(3)
-        .map(parts -> parts[0] + ":" + parts[1])
+        .map(e -> e.playerName() + ":" + e.score())
         .collect(Collectors.toList());
 
     Files.write(FAME_FILE, top3);
   }
 
   /**
-   * Loads the current list of scores from the data file.
+   * Loads the current list of scores as ScoreEntry objects.
    *
-   * @return a non-null list of raw score strings.
-   * @throws IOException if the file exists but cannot be read.
+   * @return a list of ScoreEntry objects.
+   * @throws IOException if the file cannot be read.
    */
-  public List<String> loadScores() throws IOException {
+  public List<ScoreEntry> loadScores() throws IOException {
     if (!Files.exists(FAME_FILE)) {
       return new ArrayList<>();
     }
-    return Files.readAllLines(FAME_FILE);
-  }
-
-  /**
-   * Prints the Hall of Fame top scores to the standard output.
-   *
-   * @throws IOException if the scores cannot be retrieved.
-   */
-  public void display() throws IOException {
-    System.out.println("\n--- HALL OF FAME (TOP 3) ---");
-    List<String> scores = loadScores();
-    if (scores.isEmpty()) {
-      System.out.println("No scores recorded yet.");
-    } else {
-      scores.forEach(l -> System.out.println(l.replace(":", " - ") + " pts"));
-    }
+    return Files.readAllLines(FAME_FILE).stream()
+        .map(line -> line.split(":"))
+        .filter(parts -> parts.length == 2)
+        .map(parts -> new ScoreEntry(parts[0], Integer.parseInt(parts[1])))
+        .collect(Collectors.toCollection(ArrayList::new));
   }
 }

@@ -2,6 +2,12 @@ package fr.uge.backpackhero;
 
 import fr.uge.backpackhero.entites.Heros;
 import fr.uge.backpackhero.donjon.DungeonGenerator;
+
+import java.io.IOException;
+import java.util.List;
+
+import fr.uge.backpackhero.data.HallOfFame;
+import fr.uge.backpackhero.data.ScoreEntry;
 import fr.uge.backpackhero.donjon.Dungeon;
 import fr.uge.backpackhero.item.StuffFactory;
 import fr.uge.backpackhero.item.Item;
@@ -29,7 +35,17 @@ public final class Main {
     ViewGraphic viewGraphic = new ViewGraphic(heros.getBackpack(), factory, heros);
     Jeu jeu = new Jeu(heros, dungeon, viewGraphic, viewGraphic);
     setupInitialInventory(heros, factory);
-    new GraphicEngine(jeu, viewGraphic).start(); 
+    HallOfFame hof = new HallOfFame();
+    GraphicEngine engine = new GraphicEngine(jeu, viewGraphic, hof);
+    if (jeu.getMode() == Mode.GAGNE || jeu.getMode() == Mode.PERDU) {
+      try {
+        int finalScore = heros.calculateFinalScore();
+        hof.recordScore(new ScoreEntry("Player1", finalScore)); 
+      } catch (IOException e) {
+      }
+    }
+
+    engine.start(); 
   }
 
   /**
@@ -39,7 +55,8 @@ public final class Main {
    * @param factory the factory used to create items.
    */
   private static void setupInitialInventory(Heros heros, StuffFactory factory) {
-    Item sword = factory.getItem("Wood Sword");
+    Item sword
+    = factory.getItem("Wood Sword");
     if (sword != null) {
       heros.getBackpack().add(new ItemInstance(sword), new Position(0, 0));
     }

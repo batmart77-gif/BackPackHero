@@ -11,12 +11,15 @@ import fr.uge.backpackhero.graphics.ImageLoader;
 
 /**
  * Represents a room containing enemies.
- * This type of room triggers combat when the hero enters it.
+ * This type of room triggers combat when the hero enters it and interacts with it.
+ *
+ * @param enemies The list of enemies present in this room.
  */
 public record EnemyRoom(List<Ennemi> enemies) implements Room {
   
   /**
-   * Compact constructor to validate that the list of enemies is not null or empty.
+   * Compact constructor to validate that the list of enemies is valid.
+   * Ensures the list is neither null nor empty to prevent runtime errors.
    *
    * @param enemies The list of enemies present in this room.
    * @throws NullPointerException if the enemies list is null.
@@ -25,29 +28,49 @@ public record EnemyRoom(List<Ennemi> enemies) implements Room {
   public EnemyRoom {
     Objects.requireNonNull(enemies);
     if (enemies.isEmpty()) {
-      throw new IllegalArgumentException("Une salle d'ennemi ne peut pas être vide");
+      throw new IllegalArgumentException("An enemy room cannot be empty");
     }
   }
-  
+
+  /**
+   * Retrieves the name of the sprite associated with the first enemy in the room.
+   *
+   * @return the name of the enemy as a String for image loading.
+   */
   public String getSpriteName() {
-    // On récupère le premier ennemi et on demande son nom
-    // Assurez-vous que votre classe Ennemi a une méthode getName() ou nom()
-    return enemies.get(0).getName(); 
+    return enemies.get(0).getName();
   }
-  
+
+  /**
+   * Draws the representative enemy sprite on the dungeon map.
+   *
+   * @param g the graphics context used for drawing.
+   * @param x the x-coordinate on the screen.
+   * @param y the y-coordinate on the screen.
+   * @param size the size of the tile in pixels.
+   * @param img the loader providing the enemy texture.
+   */
   @Override
   public void draw(Graphics2D g, int x, int y, int size, ImageLoader img) {
-      String spriteName = enemies.get(0).getName(); 
-      g.drawImage(img.getImage(spriteName), x, y, size, size, null);
+    Objects.requireNonNull(g);
+    Objects.requireNonNull(img);
+    String spriteName = getSpriteName();
+    g.drawImage(img.getImage(spriteName), x, y, size, size, null);
   }
-  
+
+  /**
+   * Triggers a combat session if at least one enemy in the room is alive.
+   * Transitions the game state to combat mode.
+   *
+   * @param jeu the current game instance.
+   */
   @Override
   public void onClick(Jeu jeu) {
-      if (this.enemies().stream().anyMatch(e -> e.estVivant())) {
-          // On prépare le combat et on change de mode
-          jeu.lancerCombat(this.enemies()); 
-          jeu.setMode(Mode.COMBAT);
-      }
+    Objects.requireNonNull(jeu);
+    if (this.enemies().stream().anyMatch(Ennemi::estVivant)) {
+      jeu.notifier("Combat starts!");
+      jeu.lancerCombat(this.enemies());
+      jeu.setMode(Mode.COMBAT);
+    }
   }
-  
 }

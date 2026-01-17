@@ -10,22 +10,20 @@ import java.util.Objects;
  */
 public class Dungeon {
   
-  /** The list of all floors comprising the dungeon. */
   private final List<Floor> floors;
-  
-  /** The zero-based index of the floor the hero is currently on. */
   private int currentFloorIndex;
   
   /**
    * Constructs a Dungeon object.
    * Initializes the floor list and sets the starting floor index to 0.
+   * To avoid "morts subites", the list is checked for nullity.
    *
    * @param floors The list of floors that make up the dungeon.
    * @throws NullPointerException if the floors list is null.
    */
   public Dungeon(List<Floor> floors) {
     Objects.requireNonNull(floors);
-    this.floors = new ArrayList<>(floors); 
+    this.floors = new ArrayList<>(floors);
     this.currentFloorIndex = 0;
   }
   
@@ -41,34 +39,32 @@ public class Dungeon {
   /**
    * Moves the player to the next floor in the sequence.
    *
-   * @return {@code true} if the transition to the next floor was successful, 
-   * {@code false} if the current floor was the last floor.
+   * @return true if the transition to the next floor was successful, 
+   * false if the current floor was the last floor.
    */
   public boolean moveToNextFloor() {
-    if (currentFloorIndex < floors.size() - 1) {
-      currentFloorIndex++;
-      return true;
+    if (isFinished()) {
+      return false;
     }
-    return false; 
+    currentFloorIndex++;
+    return true;
   }
   
   /**
-   * Checks if the player has finished the dungeon (i.e., reached the exit of the last floor).
+   * Checks if the player has finished the dungeon floors.
    *
-   * @return {@code true} if the player is currently on the final floor index, {@code false} otherwise.
+   * @return true if the player is currently on the final floor index, false otherwise.
    */
   public boolean isFinished() {
-    // Note: This checks if the hero is ON the last floor, not necessarily that they have exited it.
     return currentFloorIndex == floors.size() - 1;
   }
   
   /**
-   * Returns the one-based number of the current floor (e.g., 1, 2, 3).
+   * Returns the one-based number of the current floor.
    *
    * @return The current floor number.
    */
   public int getFloorNumber() {
-    // currentFloorIndex starts at 0, so we add 1 for display purposes
     return currentFloorIndex + 1;
   }
 }
