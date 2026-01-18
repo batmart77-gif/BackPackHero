@@ -138,6 +138,19 @@ public sealed interface Item permits RangeWeapon, Arrow, MeleeWeapon, Armor, Shi
   boolean use(Heros heros, Ennemi target, BackPack backpack, ItemInstance instance);
 
   /**
+   * Indicates whether this item is classified as a curse.
+   * <p>
+   * Curses are typically negative items that occupy space in the backpack and may
+   * provide detrimental effects. They are usually filtered out of rewards like
+   * treasure chests and are primarily obtained through combat or specific dark
+   * events.
+   * </p>
+   *
+   * @return {@code true} if the item is a curse; {@code false} otherwise.
+   */
+  boolean isCurse();
+
+  /**
    * Indicates whether this item is classified as a piece of armor. By default,
    * this returns {@code false}. Armor items should override this to return
    * {@code true} to enable passive protection calculations during combat.

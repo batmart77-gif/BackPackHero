@@ -82,4 +82,9 @@ public record Arrow(String name, List<Position> pos, Rarity rarity, int stats, i
     return false;
   }
 
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
+
 }

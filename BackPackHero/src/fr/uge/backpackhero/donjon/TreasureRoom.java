@@ -9,31 +9,33 @@ import fr.uge.backpackhero.graphics.ImageLoader;
 import fr.uge.backpackhero.item.ItemInstance;
 
 /**
- * Represents a room containing a treasure chest.
- * Entering this room allows the hero to obtain the items contained within the loot list.
+ * Represents a room containing a treasure chest. Entering this room allows the
+ * hero to obtain the items contained within the loot list.
  *
  * @param loot The list of item instances found as loot in this treasure chest.
  */
 public record TreasureRoom(List<ItemInstance> loot) implements Room {
-  
+
   /**
-   * Compact constructor to validate that the list of loot is not null.
+   * Validates and filters the loot list. Curses are excluded to ensure chests
+   * only contain helpful rewards.
    *
-   * @param loot The list of loot items.
+   * @param loot The initial list of loot items.
    * @throws NullPointerException if the loot list is null.
    */
   public TreasureRoom {
     Objects.requireNonNull(loot);
+    loot = loot.stream().filter(item -> !item.getItem().isCurse()).toList();
   }
-  
+
   /**
    * Draws the representative treasure or the first item of the loot on the map.
    *
-   * @param g the graphics context used for drawing.
-   * @param x the x-coordinate on the screen.
-   * @param y the y-coordinate on the screen.
+   * @param g    the graphics context used for drawing.
+   * @param x    the x-coordinate on the screen.
+   * @param y    the y-coordinate on the screen.
    * @param size the size of the tile in pixels.
-   * @param img the loader providing the item textures.
+   * @param img  the loader providing the item textures.
    */
   @Override
   public void draw(Graphics2D g, int x, int y, int size, ImageLoader img) {
@@ -44,7 +46,7 @@ public record TreasureRoom(List<ItemInstance> loot) implements Room {
       g.drawImage(img.getImage(itemName), x, y, size, size, null);
     }
   }
-  
+
   /**
    * Triggers the loot collection process when the player clicks on the chest.
    * Iterates through the loot and prompts the user for placement in the backpack.

@@ -73,4 +73,9 @@ public record Shield(String name, List<Position> pos, Rarity rarity, int stats, 
     }
     return false;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }

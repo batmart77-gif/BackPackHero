@@ -79,7 +79,6 @@ public final class Heros {
         int bonus = calculerBonusEspace(instance);
 
         this.protection += (totalArmorForItem + bonus);
-        System.out.println(armor.name() + " donne " + (totalArmorForItem + bonus) + " protection.");
       }
     }
   }

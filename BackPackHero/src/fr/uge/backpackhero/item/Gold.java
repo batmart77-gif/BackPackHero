@@ -94,4 +94,9 @@ public record Gold() implements Item {
     Objects.requireNonNull(self);
     return false;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }

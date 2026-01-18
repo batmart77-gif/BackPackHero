@@ -106,4 +106,9 @@ public record MagicItem(String name, List<Position> pos, Rarity rarity, int stat
     }
     return false;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }

@@ -90,4 +90,9 @@ public record ManaStone(String name, List<Position> pos, Rarity rarity, int stat
   public boolean isManaStone() {
     return true;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }

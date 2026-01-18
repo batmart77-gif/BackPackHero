@@ -86,4 +86,9 @@ public record Armor(String name, List<Position> pos, Rarity rarity, int stats, i
   public boolean isArmor() {
     return true;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }

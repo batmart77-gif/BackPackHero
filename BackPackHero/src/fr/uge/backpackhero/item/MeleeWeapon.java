@@ -100,4 +100,9 @@ public record MeleeWeapon(String name, List<Position> pos, Rarity rarity, int st
     }
     return false;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }

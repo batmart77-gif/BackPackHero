@@ -88,4 +88,9 @@ public record Curse(List<Position> pos) implements Item {
     return "C";
   }
 
+  @Override
+  public boolean isCurse() {
+    return true;
+  }
+
 }

@@ -75,4 +75,9 @@ public record RangeWeapon(String name, List<Position> pos, Rarity rarity, int co
     }
     return false;
   }
+
+  @Override
+  public boolean isCurse() {
+    return false;
+  }
 }
