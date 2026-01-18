@@ -106,14 +106,18 @@ public class GraphicEngine {
     if (nouveauMessage != null) {
       this.messageFlash = nouveauMessage;
       this.messageTimer = 120;
-    }
-    
+    }   
     if ((jeu.getMode() == Mode.PERDU || jeu.getMode() == Mode.GAGNE) && !scoreSaved) {
       scoreSaved = true;
-      ScoreEntry entry = new ScoreEntry("Bosphore", jeu.getHeros().getGold());
+      var h = jeu.getHeros();
+      int maxHp = h.getPvMax();     
+      int valeurEquipement = h.getBackpack().getItems().stream()
+          .mapToInt(itemInstance -> itemInstance.getItem().price())
+          .sum();      
+      int scoreFinal = maxHp + valeurEquipement;     
+      ScoreEntry entry = new ScoreEntry("Bosphore", scoreFinal);
       hof.recordScore(entry); 
     }
-    
   }
 
   private void renderFrame(ApplicationContext context) {
