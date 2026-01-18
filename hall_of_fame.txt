@@ -1,2 +1,3 @@
-Joueur:82
-Joueur:50
+Bosphore:30
+Bosphore:18
+Bosphore:2

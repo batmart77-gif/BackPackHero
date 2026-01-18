@@ -4,8 +4,10 @@ import com.github.forax.zen.*;
 import com.github.forax.zen.Event;
 import fr.uge.backpackhero.Jeu;
 import fr.uge.backpackhero.Mode;
+import fr.uge.backpackhero.combat.Combat;
 import fr.uge.backpackhero.data.HallOfFame;
 import fr.uge.backpackhero.data.ScoreEntry;
+import fr.uge.backpackhero.donjon.Floor;
 import fr.uge.backpackhero.donjon.MerchantRoom;
 import fr.uge.backpackhero.donjon.Room;
 import fr.uge.backpackhero.entites.Ennemi;
@@ -15,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.awt.*;
+import java.io.IOException;
 
 /**
  * Main graphical engine for rendering the game world and handling user
@@ -35,6 +38,7 @@ public class GraphicEngine {
 
   private final HallOfFame hof;
 
+  private boolean scoreSaved = false;
   /**
    * Constructs the engine.
    * 
@@ -46,7 +50,7 @@ public class GraphicEngine {
     this.viewGraphic = Objects.requireNonNull(viewGraphic);
     this.hof = Objects.requireNonNull(hof);
   }
-
+ 
   /**
    * Launches the main application loop.
    */
@@ -103,6 +107,13 @@ public class GraphicEngine {
       this.messageFlash = nouveauMessage;
       this.messageTimer = 120;
     }
+    
+    if ((jeu.getMode() == Mode.PERDU || jeu.getMode() == Mode.GAGNE) && !scoreSaved) {
+      scoreSaved = true;
+      ScoreEntry entry = new ScoreEntry("Bosphore", jeu.getHeros().getGold());
+      hof.recordScore(entry); 
+    }
+    
   }
 
   private void renderFrame(ApplicationContext context) {
@@ -175,7 +186,7 @@ public class GraphicEngine {
     }
   }
 
-  private void drawDungeonHover(Graphics2D g, fr.uge.backpackhero.donjon.Floor floor) {
+  private void drawDungeonHover(Graphics2D g, Floor floor) {
     int hc = (mouseX - dungeonStartX) / TILE_SIZE;
     int hr = (mouseY - dungeonStartY) / TILE_SIZE;
     if (hc >= 0 && hc < floor.width() && hr >= 0 && hr < floor.height()) {
@@ -452,7 +463,7 @@ public class GraphicEngine {
     }
   }
 
-  private void executerFinDeTour(fr.uge.backpackhero.combat.Combat combat) {
+  private void executerFinDeTour(Combat combat) {
     this.messageFlash = "Enemy turn...";
     this.messageTimer = 60;
     combat.startEnemyTurn();
@@ -491,7 +502,7 @@ public class GraphicEngine {
     this.messageTimer = 80;
   }
 
-  private void processCombatVictory(fr.uge.backpackhero.combat.Combat combat) {
+  private void processCombatVictory(Combat combat) {
     if (combat.getState() == fr.uge.backpackhero.combat.CombatState.WIN) {
       this.messageFlash = "VICTORY!";
       List<ItemInstance> loot = combat.finishCombat();

@@ -1,6 +1,7 @@
 package fr.uge.backpackhero.data;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -21,19 +22,24 @@ public final class HallOfFame {
    * @param entry the non-null score entry to record.
    * @throws IOException if the score file cannot be written.
    */
-  public void recordScore(ScoreEntry entry) throws IOException {
+  public void recordScore(ScoreEntry entry) {
     Objects.requireNonNull(entry);
-    List<ScoreEntry> allScores = loadScores();
-    allScores.add(entry);
-    
-    List<String> top3 = allScores.stream()
-        .sorted() // Uses ScoreEntry.compareTo (descending)
-        .limit(3)
-        .map(e -> e.playerName() + ":" + e.score())
-        .collect(Collectors.toList());
+    try {
+      List<ScoreEntry> allScores = loadScores();
+      allScores.add(entry);      
+      List<String> top3 = allScores.stream()
+          .sorted()
+          .limit(3)
+          .map(e -> e.playerName() + ":" + e.score())
+          .collect(Collectors.toList());
 
-    Files.write(FAME_FILE, top3);
+      Files.write(FAME_FILE, top3);
+      
+    } catch (IOException e) {
+        throw new UncheckedIOException(e); 
+    }
   }
+  
 
   /**
    * Loads the current list of scores as ScoreEntry objects.

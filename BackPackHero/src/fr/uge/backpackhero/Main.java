@@ -33,18 +33,10 @@ public final class Main {
     Dungeon dungeon = DungeonGenerator.createDungeonPhase3();
     StuffFactory factory = new StuffFactory();    
     ViewGraphic viewGraphic = new ViewGraphic(heros.getBackpack(), heros);
+    HallOfFame hof = new HallOfFame();    
     Jeu jeu = new Jeu(heros, dungeon, viewGraphic, viewGraphic);
-    setupInitialInventory(heros, factory);
-    HallOfFame hof = new HallOfFame();
+    setupInitialInventory(heros, factory);  
     GraphicEngine engine = new GraphicEngine(jeu, viewGraphic, hof);
-    if (jeu.getMode() == Mode.GAGNE || jeu.getMode() == Mode.PERDU) {
-      try {
-        int finalScore = heros.calculateFinalScore();
-        hof.recordScore(new ScoreEntry("Player1", finalScore)); 
-      } catch (IOException e) {
-      }
-    }
-
     engine.start(); 
   }
 
